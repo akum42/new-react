@@ -25,17 +25,18 @@ function App() {
   const { theme } = useTheme();
 
   useEffect(() => {
+    const root = document.documentElement;
     if (theme === 'dark') {
-      document.body.classList.add('dark-mode');
+      root.classList.add('dark');
     } else {
-      document.body.classList.remove('dark-mode');
+      root.classList.remove('dark');
     }
   }, [theme]);
 
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index path={NAVIGATION_PATHS.HOME_PATH} element={<Home />} />
+        <Route index element={<Home />} />
         <Route path={NAVIGATION_PATHS.DASHBOARD_PATH} element={<DashboardPage />} />
         <Route path={NAVIGATION_PATHS.USERS_PATH} element={<UsersPage />} />
         <Route path={NAVIGATION_PATHS.CLIENTS_PATH} element={<ClientsPage />} />
