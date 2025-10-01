@@ -5,7 +5,7 @@ import { KEYS, type Employee, type Role } from '@/types/models';
 import { createId } from '@/lib/id';
 import { getAll, removeById, save, type StorageEntity } from '@/lib/storage';
 
-export default function UsersPage() {
+export default function UsersPage1() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('employee');

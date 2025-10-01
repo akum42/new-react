@@ -1,50 +1,59 @@
-import { useEffect } from 'react';
-import { Outlet, Route, Routes } from 'react-router-dom';
+import { useState } from "react";
+import { Sidebar } from "./components/sidebar";
+import Dashboard from "./components/dashboard";
+import Employee from "./components/employee";
+import Client from "./components/client";
+import Billing from "./components/billing";
+import Task from "./components/task";
 
-import { useTheme } from './context/theme-provider';
-import { NAVIGATION_PATHS } from './constants/navigation';
+type Page = "dashboard" | "employees" | "clients" | "billing" | "tasks";
 
-import Home from './views/Home/Home';
-import { Navbar } from '@/components/layout/navbar';
-import UsersPage from '@/views/Users/UsersPage';
-import ClientsPage from '@/views/Clients/ClientsPage';
-import BillingPage from '@/views/Billing/BillingPage';
-import TasksPage from '@/views/Tasks/TasksPage';
-import DashboardPage from '@/views/Dashboard/DashboardPage';
+type User = {
+  id: string;
+  name: string;
+  role: "admin" | "manager" | "employee";
+  email: string;
+};
 
-function Layout() {
-  return (
-    <>
-      <Navbar />
-      <Outlet />
-    </>
-  );
-}
+// Mock current user - in a real app this would come from authentication
+const mockUser: User = {
+  id: "1",
+  name: "John Admin",
+  role: "admin",
+  email: "admin@company.com"
+};
 
-function App() {
-  const { theme } = useTheme();
+export default function App() {
+  const [currentPage, setCurrentPage] = useState<Page>("dashboard");
+  const [currentUser] = useState<User>(mockUser);
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+  const renderPage = () => {
+    switch (currentPage) {
+      case "dashboard":
+        return <Dashboard currentUser={currentUser} />;
+      case "employees":
+        return <Employee currentUser={currentUser} />;
+      case "clients":
+        return <Client currentUser={currentUser} />;
+      case "billing":
+        return <Billing currentUser={currentUser} />;
+      case "tasks":
+        return <Task currentUser={currentUser} />;
+      default:
+        return <Dashboard currentUser={currentUser} />;
     }
-  }, [theme]);
+  };
 
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path={NAVIGATION_PATHS.DASHBOARD_PATH} element={<DashboardPage />} />
-        <Route path={NAVIGATION_PATHS.USERS_PATH} element={<UsersPage />} />
-        <Route path={NAVIGATION_PATHS.CLIENTS_PATH} element={<ClientsPage />} />
-        <Route path={NAVIGATION_PATHS.BILLING_PATH} element={<BillingPage />} />
-        <Route path={NAVIGATION_PATHS.TASKS_PATH} element={<TasksPage />} />
-      </Route>
-    </Routes>
+    <div className="flex h-screen bg-background">
+      <Sidebar 
+        currentPage={currentPage} 
+        setCurrentPage={setCurrentPage}
+        currentUser={currentUser}
+      />
+      <main className="flex-1 overflow-auto">
+        {renderPage()}
+      </main>
+    </div>
   );
 }
-
-export default App;
