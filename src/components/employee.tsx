@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -22,34 +22,88 @@ type Employee = {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "manager" | "employee";
-  department: string;
-  joinDate: string;
-  status: "active" | "inactive";
-  salary: number;
+  role: string;
+  address: string;
+  phoneNum: string;
+  altPhoneNum: string;
+  status: string;
 };
 
 interface EmployeeProps {
   currentUser: User;
 }
 
-// Mock employee data
-const mockEmployees: Employee[] = [
-  { id: "1", name: "John Admin", email: "admin@company.com", role: "admin", department: "IT", joinDate: "2020-01-15", status: "active", salary: 80000 },
-  { id: "2", name: "Sarah Manager", email: "sarah@company.com", role: "manager", department: "Sales", joinDate: "2021-03-10", status: "active", salary: 65000 },
-  { id: "3", name: "Mike Johnson", email: "mike@company.com", role: "employee", department: "Marketing", joinDate: "2022-06-20", status: "active", salary: 45000 },
-  { id: "4", name: "Emily Davis", email: "emily@company.com", role: "employee", department: "HR", joinDate: "2021-11-05", status: "active", salary: 50000 },
-  { id: "5", name: "Robert Wilson", email: "robert@company.com", role: "manager", department: "IT", joinDate: "2020-08-12", status: "inactive", salary: 70000 },
-];
+
+const USERS_API_URL = "http://localhost:8080/api/users";
+const USERS_ROLE_URL = "http://localhost:8080/api/users/roles";
+const USERS_STATUS_URL = "http://localhost:8080/api/users/statuses";
 
 export default function Employee({ currentUser }: EmployeeProps) {
-  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [statuses, setStatuses] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [formData, setFormData] = useState<Partial<Employee>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch employees from API
+  const fetchEmployees = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(USERS_API_URL, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch employees');
+      const data = await res.json();
+      setEmployees(data);
+    } catch (err: any) {
+      setError(err.message || 'Error fetching employees');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch roles from API
+  const fetchRoles = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(USERS_ROLE_URL, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch roles');
+      const data = await res.json();
+      setRoles(data);
+    } catch (err: any) {
+      setError(err.message || 'Error fetching roles');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch status from API
+  const fetchStatuses = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(USERS_STATUS_URL, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch statuses');
+      const data = await res.json();
+      setStatuses(data);
+    } catch (err: any) {
+      setError(err.message || 'Error fetching stattuses');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchEmployees();
+    fetchRoles();
+    fetchStatuses();
+  }, []);
 
   const canManageEmployee = (targetEmployee: Employee) => {
     if (currentUser.role === "admin") return true;
@@ -57,31 +111,26 @@ export default function Employee({ currentUser }: EmployeeProps) {
     return false;
   };
 
-  const canViewSalary = () => {
-    return currentUser.role === "admin" || currentUser.role === "manager";
-  };
 
   const filteredEmployees = employees.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          employee.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === "all" || employee.role === roleFilter;
-    const matchesDepartment = departmentFilter === "all" || employee.department === departmentFilter;
     
-    return matchesSearch && matchesRole && matchesDepartment;
+    return matchesSearch && matchesRole;
   });
 
-  const departments = Array.from(new Set(employees.map(e => e.department)));
 
   const handleAddEmployee = () => {
     setEditingEmployee(null);
     setFormData({
       role: "employee",
       status: "active",
-      department: "",
       name: "",
       email: "",
-      salary: 40000,
-      joinDate: new Date().toISOString().split('T')[0]
+      address: "",
+      phoneNum: "",
+      altPhoneNum: ""
     });
     setIsDialogOpen(true);
   };
@@ -93,38 +142,49 @@ export default function Employee({ currentUser }: EmployeeProps) {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteEmployee = (employeeId: string) => {
+  const handleDeleteEmployee = async (employeeId: string) => {
     const employee = employees.find(e => e.id === employeeId);
     if (!employee || !canManageEmployee(employee)) return;
-    
-    setEmployees(prev => prev.filter(e => e.id !== employeeId));
+    try {
+      const res = await fetch(`${USERS_API_URL}${employeeId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to delete employee');
+      await fetchEmployees();
+    } catch (err: any) {
+      setError(err.message || 'Error deleting employee');
+    }
   };
 
-  const handleSaveEmployee = () => {
-    if (!formData.name || !formData.email || !formData.department) return;
-
-    if (editingEmployee) {
-      setEmployees(prev => prev.map(emp => 
-        emp.id === editingEmployee.id 
-          ? { ...emp, ...formData } as Employee
-          : emp
-      ));
-    } else {
-      const newEmployee: Employee = {
-        id: Date.now().toString(),
-        name: formData.name!,
-        email: formData.email!,
-        role: formData.role as "admin" | "manager" | "employee",
-        department: formData.department!,
-        joinDate: formData.joinDate!,
-        status: formData.status as "active" | "inactive",
-        salary: formData.salary || 40000,
-      };
-      setEmployees(prev => [...prev, newEmployee]);
+  const handleSaveEmployee = async () => {
+    if (!formData.name || !formData.email) return;
+    try {
+      if (editingEmployee) {
+        // Update
+        const res = await fetch(`${USERS_API_URL}${editingEmployee.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(formData),
+        });
+        if (!res.ok) throw new Error('Failed to update employee');
+      } else {
+        // Create
+        const res = await fetch(USERS_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(formData),
+        });
+        if (!res.ok) throw new Error('Failed to create employee');
+      }
+      await fetchEmployees();
+      setIsDialogOpen(false);
+      setFormData({});
+    } catch (err: any) {
+      setError(err.message || 'Error saving employee');
     }
-    
-    setIsDialogOpen(false);
-    setFormData({});
   };
 
   const getRoleColor = (role: string) => {
@@ -142,12 +202,15 @@ export default function Employee({ currentUser }: EmployeeProps) {
       : "bg-red-100 text-red-800";
   };
 
+  if (loading) return <div className="p-6">Loading employees...</div>;
+  if (error) return <div className="p-6 text-red-600">{error}</div>;
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1>Employee Management</h1>
+          <h1>Employee</h1>
           <p className="text-muted-foreground">Manage your organization's employees</p>
         </div>
         {(currentUser.role === "admin" || currentUser.role === "manager") && (
@@ -194,25 +257,10 @@ export default function Employee({ currentUser }: EmployeeProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="employee">Employee</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Department</Label>
-              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
-                  {departments.map(dept => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                  ))}
+                  <SelectItem value="all">All Roles</SelectItem>                  
+                   {roles.map(role => (
+                      <SelectItem value={role}>{role}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -231,10 +279,7 @@ export default function Employee({ currentUser }: EmployeeProps) {
               <TableRow>
                 <TableHead>Employee</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Join Date</TableHead>
                 <TableHead>Status</TableHead>
-                {canViewSalary() && <TableHead>Salary</TableHead>}
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -259,16 +304,11 @@ export default function Employee({ currentUser }: EmployeeProps) {
                       {employee.role.charAt(0).toUpperCase() + employee.role.slice(1)}
                     </Badge>
                   </TableCell>
-                  <TableCell>{employee.department}</TableCell>
-                  <TableCell>{new Date(employee.joinDate).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(employee.status)}>
                       {employee.status.charAt(0).toUpperCase() + employee.status.slice(1)}
                     </Badge>
                   </TableCell>
-                  {canViewSalary() && (
-                    <TableCell>${employee.salary.toLocaleString()}</TableCell>
-                  )}
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {canManageEmployee(employee) && (
@@ -313,96 +353,53 @@ export default function Employee({ currentUser }: EmployeeProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={formData.name || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Employee name"
-              />
-            </div>
-            
+              <Input id="name" value={formData.name || ""} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))} placeholder="Employee name" />
+            </div>            
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="employee@company.com"
-              />
+              <Input id="email" type="email" value={formData.email || ""} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="employee@company.com" />
             </div>
             
             <div className="space-y-2">
               <Label>Role</Label>
               <Select 
-                value={formData.role || "employee"} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as any }))}
-              >
+                value={formData.role || "employee"} onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as any }))} >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="employee">Employee</SelectItem>
-                  {currentUser.role === "admin" && (
-                    <>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </>
-                  )}
+                  {roles.map(role => (
+                    <SelectItem value={role}>{role}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
-              <Input
-                id="department"
-                value={formData.department || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-                placeholder="Department"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="joinDate">Join Date</Label>
-              <Input
-                id="joinDate"
-                type="date"
-                value={formData.joinDate || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, joinDate: e.target.value }))}
-              />
-            </div>
-            
+            </div>     
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select 
-                value={formData.status || "active"} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}
-              >
+              <Select  value={formData.status || "active"} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}  >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  {statuses.map(status => (
+                    <SelectItem value={status}>{status}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-            
-            {canViewSalary() && (
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="salary">Annual Salary</Label>
-                <Input
-                  id="salary"
-                  type="number"
-                  value={formData.salary || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, salary: parseInt(e.target.value) || 0 }))}
-                  placeholder="40000"
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Input id="address" type="address" value={formData.address || ""} onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))} placeholder="House# 1, Street 1, City, Country" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phoneNum">Phone</Label>
+              <Input id="phoneNum" type="phoneNum" value={formData.phoneNum || ""} onChange={(e) => setFormData(prev => ({ ...prev, phoneNum: e.target.value }))} placeholder="1234567890" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="altPhoneNum">Alt Phone</Label>
+              <Input id="altPhoneNum" type="altPhoneNum" value={formData.altPhoneNum || ""} onChange={(e) => setFormData(prev => ({ ...prev, altPhoneNum: e.target.value }))} placeholder="1234567890" />
+            </div>              
           </div>
-          
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel

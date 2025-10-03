@@ -9,6 +9,9 @@ import Task from "./components/task";
 import { UserRoundPen } from "lucide-react";
 
 type Page = "dashboard" | "employees" | "clients" | "billing" | "tasks";
+const USER_API_URL = "http://localhost:8080/api/users/me";
+const USER_API_ROLE_URL = "http://localhost:8080/api/users/role";
+const OAUTH2_URL = "http://localhost:8080/oauth2/authorization/google";
 
 type User = {
   id: string;
@@ -23,21 +26,18 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/users/me', {
+    fetch(USER_API_URL, {
       credentials: 'include'  // send cookies for session
-    })
-      .then(async res => {
+    }).then(async res => {
         if (res.status === 401) {
-          // Not logged in, redirect to Google OAuth login
-          window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+          window.location.href = OAUTH2_URL;
           return;
         }
         const data = await res.json();
         setCurrentUser(data);
       })
       .catch(() => {
-        // In case of network error, also redirect or handle accordingly
-        window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+        window.location.href = OAUTH2_URL;
       })
       .finally(() => setLoading(false));
   }, []);
