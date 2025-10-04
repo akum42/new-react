@@ -5,7 +5,8 @@ import {
   CreditCard, 
   CheckSquare,
   LogOut,
-  Building2
+  Building2,
+  ClipboardList
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -18,7 +19,7 @@ type User = {
   email: string;
 };
 
-type Page = "dashboard" | "employees" | "clients" | "billing" | "tasks";
+type Page = "dashboard" | "employees" | "clients" | "billing" | "tasks" | "task-types";
 
 interface SidebarProps {
   currentPage: Page;
@@ -33,6 +34,7 @@ export function Sidebar({ currentPage, setCurrentPage, currentUser }: SidebarPro
     { id: "clients", label: "Clients", icon: UserCheck },
     { id: "billing", label: "Billing", icon: CreditCard },
     { id: "tasks", label: "Tasks", icon: CheckSquare },
+    { id: "task-types", label: "Task Types", icon: ClipboardList },
   ] as const;
 
   const getRoleColor = (role: string) => {

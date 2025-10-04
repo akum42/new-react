@@ -1,43 +1,36 @@
 import { useState, useEffect } from "react";
-import { useAuthRedirect } from "./hooks/useAuthRedirect";
 import { Sidebar } from "./components/sidebar";
-import Dashboard from "./components/dashboard";
-import Employee from "./components/employee";
-import Client from "./components/client";
-import Billing from "./components/billing";
-import Task from "./components/task";
-import { UserRoundPen } from "lucide-react";
+import DashboardPage from "./components/dashboard";
+import EmployeePage from "./components/employee";
+import ClientPage from "./components/client";
+import BillingPage from "./components/billing";
+import TasksPage from "./components/task";
+import TaskTypePage from "./components/TaskTypePage";
 
-type Page = "dashboard" | "employees" | "clients" | "billing" | "tasks";
-const USER_API_URL = "http://localhost:8080/api/users/me";
-const USER_API_ROLE_URL = "http://localhost:8080/api/users/role";
-const OAUTH2_URL = "http://localhost:8080/oauth2/authorization/google";
+import { KEYS, type Employee } from '@/types/models';
+import { API_PATHS } from '@/constants/apipath';
 
-type User = {
-  id: string;
-  name: string;
-  role: "admin" | "manager" | "employee";
-  email: string;
-};
+type Page = "dashboard" | "employees" | "clients" | "billing" | "tasks" | "task-types";
+
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(USER_API_URL, {
+    fetch(API_PATHS.CURRENT_USER_API_URL, {
       credentials: 'include'  // send cookies for session
     }).then(async res => {
         if (res.status === 401) {
-          window.location.href = OAUTH2_URL;
+          window.location.href = API_PATHS.OAUTH2_URL;
           return;
         }
         const data = await res.json();
         setCurrentUser(data);
       })
       .catch(() => {
-        window.location.href = OAUTH2_URL;
+        window.location.href = API_PATHS.OAUTH2_URL;
       })
       .finally(() => setLoading(false));
   }, []);
@@ -48,29 +41,28 @@ export default function App() {
     }
     switch (currentPage) {
       case "dashboard":
-        return <Dashboard currentUser={currentUser} />;
+        return <DashboardPage currentUser={currentUser} />;
       case "employees":
-        return <Employee currentUser={currentUser} />;
+        return <EmployeePage currentUser={currentUser} />;
       case "clients":
-        return <Client currentUser={currentUser} />;
+        return <ClientPage currentUser={currentUser} />;
       case "billing":
-        return <Billing currentUser={currentUser} />;
+        return <BillingPage currentUser={currentUser} />;
       case "tasks":
-        return <Task currentUser={currentUser} />;
+        return <TasksPage  currentUser={currentUser} />;
+      case "task-types":
+        return <TaskTypePage currentUser={currentUser} />;
       default:
-        return <Dashboard currentUser={currentUser} />;
+        return <DashboardPage currentUser={currentUser} />;
     }
   };
 
   if (loading) {
     return <div>Loading...</div>; // Or a more sophisticated loading screen
   }
-
   if (!currentUser) {
     return <div>Error loading user data.</div>; // Or a redirect to a login page
   }
-
-
   return (
     <div className="flex h-screen bg-background">
       <Sidebar

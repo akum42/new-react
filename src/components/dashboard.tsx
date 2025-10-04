@@ -2,16 +2,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Badge } from "./ui/badge";
 import { Users, UserCheck, CreditCard, CheckSquare, TrendingUp, TrendingDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { Employee } from "@/types/models";
 
-type User = {
-  id: string;
-  name: string;
-  role: "admin" | "manager" | "employee";
-  email: string;
-};
 
 interface DashboardProps {
-  currentUser: User;
+  currentUser: Employee;
 }
 
 // Mock data for charts
@@ -44,7 +39,7 @@ const recentActivities = [
   { id: 4, action: "New client registered", client: "Tech Solutions", time: "1 day ago", type: "client" },
 ];
 
-export default function Dashboard({ currentUser }: DashboardProps) {
+export default function DashboardPage({ currentUser }: DashboardProps) {
   const stats = [
     {
       title: "Total Employees",

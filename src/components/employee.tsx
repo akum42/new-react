@@ -3,42 +3,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { KEYS, type Employee } from '@/types/models';
+import { API_PATHS } from '@/constants/apipath';
+import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { Plus, Edit, Trash2, Search, Filter } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Filter, Building2, Phone, Mail } from "lucide-react";
 import { Alert, AlertDescription } from "./ui/alert";
 
-type User = {
-  id: string;
-  name: string;
-  role: "admin" | "manager" | "employee";
-  email: string;
-};
-
-type Employee = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  address: string;
-  phoneNum: string;
-  altPhoneNum: string;
-  status: string;
-};
-
 interface EmployeeProps {
-  currentUser: User;
+  currentUser: Employee;
 }
 
-
-const USERS_API_URL = "http://localhost:8080/api/users";
-const USERS_ROLE_URL = "http://localhost:8080/api/users/roles";
-const USERS_STATUS_URL = "http://localhost:8080/api/users/statuses";
-
-export default function Employee({ currentUser }: EmployeeProps) {
+export default function EmployeePage({ currentUser }: EmployeeProps) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
@@ -50,53 +30,27 @@ export default function Employee({ currentUser }: EmployeeProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch employees from API
-  const fetchEmployees = async () => {
+
+  // Generic fetch helper
+  const fetchData = async <T,>(url: string, setter: (data: T) => void, errorMsg: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(USERS_API_URL, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch employees');
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error(errorMsg);
       const data = await res.json();
-      setEmployees(data);
+      setter(data);
     } catch (err: any) {
-      setError(err.message || 'Error fetching employees');
+      setError(err.message || errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch roles from API
-  const fetchRoles = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(USERS_ROLE_URL, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch roles');
-      const data = await res.json();
-      setRoles(data);
-    } catch (err: any) {
-      setError(err.message || 'Error fetching roles');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch status from API
-  const fetchStatuses = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(USERS_STATUS_URL, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch statuses');
-      const data = await res.json();
-      setStatuses(data);
-    } catch (err: any) {
-      setError(err.message || 'Error fetching stattuses');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Modular fetch functions
+  const fetchEmployees = () => fetchData<Employee[]>(API_PATHS.USERS_API_URL, setEmployees, 'Failed to fetch employees');
+  const fetchRoles = () => fetchData<string[]>(API_PATHS.USERS_ROLE_URL, setRoles, 'Failed to fetch roles');
+  const fetchStatuses = () => fetchData<string[]>(API_PATHS.USERS_STATUS_URL, setStatuses, 'Failed to fetch statuses');
 
 
   useEffect(() => {
@@ -143,10 +97,10 @@ export default function Employee({ currentUser }: EmployeeProps) {
   };
 
   const handleDeleteEmployee = async (employeeId: string) => {
-    const employee = employees.find(e => e.id === employeeId);
+    const employee = employees.find(e => e.userId === employeeId);
     if (!employee || !canManageEmployee(employee)) return;
     try {
-      const res = await fetch(`${USERS_API_URL}${employeeId}`, {
+      const res = await fetch(`${API_PATHS.USERS_API_URL}/${employeeId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -162,7 +116,7 @@ export default function Employee({ currentUser }: EmployeeProps) {
     try {
       if (editingEmployee) {
         // Update
-        const res = await fetch(`${USERS_API_URL}${editingEmployee.id}`, {
+        const res = await fetch(`${API_PATHS.USERS_API_URL}/${editingEmployee.userId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -171,7 +125,7 @@ export default function Employee({ currentUser }: EmployeeProps) {
         if (!res.ok) throw new Error('Failed to update employee');
       } else {
         // Create
-        const res = await fetch(USERS_API_URL, {
+        const res = await fetch(API_PATHS.USERS_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -278,6 +232,7 @@ export default function Employee({ currentUser }: EmployeeProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Employee</TableHead>
+                <TableHead>Contact</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -285,7 +240,7 @@ export default function Employee({ currentUser }: EmployeeProps) {
             </TableHeader>
             <TableBody>
               {filteredEmployees.map((employee) => (
-                <TableRow key={employee.id}>
+                <TableRow key={employee.userId}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
@@ -295,8 +250,22 @@ export default function Employee({ currentUser }: EmployeeProps) {
                       </Avatar>
                       <div>
                         <p>{employee.name}</p>
-                        <p className="text-sm text-muted-foreground">{employee.email}</p>
+                        <p className="text-sm text-muted-foreground">{employee.address}</p>
                       </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-3 w-3 text-muted-foreground" />
+                        {employee.email}
+                      </div>
+                      {employee.phoneNum && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="h-3 w-3 text-muted-foreground" />
+                          {employee.phoneNum}
+                        </div>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -323,7 +292,7 @@ export default function Employee({ currentUser }: EmployeeProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteEmployee(employee.id)}
+                            onClick={() => handleDeleteEmployee(employee.userId)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -389,7 +358,7 @@ export default function Employee({ currentUser }: EmployeeProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="address">Address</Label>
-              <Input id="address" type="address" value={formData.address || ""} onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))} placeholder="House# 1, Street 1, City, Country" />
+              <Textarea id="address" value={formData.address || ""} onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))} placeholder="House# 1, Street 1, City, Country" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phoneNum">Phone</Label>

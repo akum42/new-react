@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Progress } from "./ui/progress";
+import { Employee } from "@/types/models";
 import { Plus, Edit, Trash2, Search, CheckSquare, Clock, AlertTriangle, Calendar } from "lucide-react";
 
 type User = {
@@ -39,7 +40,7 @@ type Task = {
 };
 
 interface TaskProps {
-  currentUser: User;
+  currentUser: Employee;
 }
 
 // Mock task data
@@ -111,7 +112,7 @@ const mockTasks: Task[] = [
   }
 ];
 
-export default function Task({ currentUser }: TaskProps) {
+export default function TaskPage({ currentUser }: TaskProps) {
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");

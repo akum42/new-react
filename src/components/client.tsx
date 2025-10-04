@@ -1,86 +1,65 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { API_PATHS } from '@/constants/apipath';
+import { Client, Employee } from "@/types/models";
+import { Building2, Edit, Mail, Phone, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Checkbox } from "./ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
-import { Badge } from "./ui/badge";
-import { Plus, Edit, Trash2, Search, Building2, Phone, Mail } from "lucide-react";
+import { Textarea } from "./ui/textarea";
 
-type User = {
-  id: string;
-  name: string;
-  role: "admin" | "manager" | "employee";
-  email: string;
-};
 
-type Client = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  company: string;
-  address: string;
-  status: "active" | "inactive" | "prospect";
-  contractValue: number;
-  lastContact: string;
-  notes: string;
-};
-
-interface ClientProps {
-  currentUser: User;
+interface EmployeeProps {
+  currentUser: Employee;
 }
 
-// Mock client data
-const mockClients: Client[] = [
-  {
-    id: "1",
-    name: "John Smith",
-    email: "john@acmecorp.com",
-    phone: "(555) 123-4567",
-    company: "Acme Corporation",
-    address: "123 Business Ave, New York, NY 10001",
-    status: "active",
-    contractValue: 150000,
-    lastContact: "2024-01-20",
-    notes: "Key client, handles multiple projects"
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    email: "sarah@techsolutions.com",
-    phone: "(555) 987-6543",
-    company: "Tech Solutions Inc",
-    address: "456 Innovation Blvd, San Francisco, CA 94105",
-    status: "prospect",
-    contractValue: 75000,
-    lastContact: "2024-01-15",
-    notes: "Interested in enterprise package"
-  },
-  {
-    id: "3",
-    name: "Michael Brown",
-    email: "mike@globalltd.com",
-    phone: "(555) 456-7890",
-    company: "Global Services Ltd",
-    address: "789 Commerce St, Chicago, IL 60601",
-    status: "active",
-    contractValue: 200000,
-    lastContact: "2024-01-18",
-    notes: "Long-term partnership"
-  },
-];
 
-export default function Client({ currentUser }: ClientProps) {
-  const [clients, setClients] = useState<Client[]>(mockClients);
+export default function ClientPage({ currentUser }: EmployeeProps) {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [clientTypes, setClientTypes] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statuses, setStatuses] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [formData, setFormData] = useState<Partial<Client>>({});
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Generic fetch helper
+  const fetchData = async <T,>(url: string, setter: (data: T) => void, errorMsg: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error(errorMsg);
+      const data = await res.json();
+      setter(data);
+    } catch (err: any) {
+      setError(err.message || errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Modular fetch functions
+  const fetchClients = () => fetchData<Client[]>(API_PATHS.CLIENT_API_URL, setClients, 'Failed to fetch clients');
+  const fetchClientTypes = () => fetchData<string[]>(API_PATHS.CLIENT_TYPE_API_URL, setClientTypes, 'Failed to fetch client types');
+  const fetchStatuses = () => fetchData<string[]>(API_PATHS.USERS_STATUS_URL, setStatuses, 'Failed to fetch statuses');
+
+
+  useEffect(() => {
+    fetchClientTypes();
+    fetchClients();
+    fetchStatuses();
+  }, []);
+
 
   const canManageClients = () => {
     return currentUser.role === "admin" || currentUser.role === "manager";
@@ -88,7 +67,6 @@ export default function Client({ currentUser }: ClientProps) {
 
   const filteredClients = clients.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          client.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || client.status === statusFilter;
     
@@ -98,9 +76,43 @@ export default function Client({ currentUser }: ClientProps) {
   const handleAddClient = () => {
     setEditingClient(null);
     setFormData({
+      clientType: "",
+      clientId: "",
+      name: "",
+      nationality: "",
+      dateOfBirth: "",
+      citizenship: "",
+      aadhar: "",
+      sex: "",
+      email: "",
+      altEmail: "",
+      phone: "",
+      altPhone: "",
+      address: "",
+      state: "",
+      country: "",
+      DSC: false,
+      DSCExpiryDate: "",
+      IEC: "",
+      PAN: "",
+      TAN: "",
+      DIN: "",
+      PFNum: "",
+      ESINum: "",
+      professionalTaxNum: "",
+      properitor: false,
+      propreitorshipFirmName: "",
+      director: false,
+      companyName: "",
+      Partner: false,
+      partnership_LLP_Name: "",
+      KARTA: false,
+      HUFName: "",
+      shareholder: false,
+      shareholderCompanyName: "",
+      dedicatedManager: "",
+      dedicatedStaff: "",
       status: "prospect",
-      contractValue: 0,
-      lastContact: new Date().toISOString().split('T')[0],
       notes: ""
     });
     setIsDialogOpen(true);
@@ -112,38 +124,48 @@ export default function Client({ currentUser }: ClientProps) {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteClient = (clientId: string) => {
+  const handleDeleteClient = async (clientId: string) => {
     if (!canManageClients()) return;
-    setClients(prev => prev.filter(c => c.id !== clientId));
+    try {
+      const res = await fetch(`${API_PATHS.CLIENT_API_URL}/${clientId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to delete client');
+      await fetchClients();
+    } catch (err: any) {
+      setError(err.message || 'Error deleting client');
+    }
   };
 
-  const handleSaveClient = () => {
-    if (!formData.name || !formData.email || !formData.company) return;
-
-    if (editingClient) {
-      setClients(prev => prev.map(client => 
-        client.id === editingClient.id 
-          ? { ...client, ...formData } as Client
-          : client
-      ));
-    } else {
-      const newClient: Client = {
-        id: Date.now().toString(),
-        name: formData.name!,
-        email: formData.email!,
-        phone: formData.phone || "",
-        company: formData.company!,
-        address: formData.address || "",
-        status: formData.status as "active" | "inactive" | "prospect",
-        contractValue: formData.contractValue || 0,
-        lastContact: formData.lastContact!,
-        notes: formData.notes || "",
-      };
-      setClients(prev => [...prev, newClient]);
+  const handleSaveClient = async () => {
+    if (!formData.name || !formData.email) return;
+    try {
+      if (editingClient) {
+        // Update
+        const res = await fetch(`${API_PATHS.CLIENT_API_URL}/${editingClient.clientId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(formData),
+        });
+        if (!res.ok) throw new Error('Failed to update client');
+      } else {
+        // Create
+        const res = await fetch(API_PATHS.CLIENT_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(formData),
+        });
+        if (!res.ok) throw new Error('Failed to create client');
+      }
+      await fetchClients();
+      setIsDialogOpen(false);
+      setFormData({});
+    } catch (err: any) {
+      setError(err.message || 'Error saving client');
     }
-    
-    setIsDialogOpen(false);
-    setFormData({});
   };
 
   const getStatusColor = (status: string) => {
@@ -155,9 +177,8 @@ export default function Client({ currentUser }: ClientProps) {
     }
   };
 
-  const totalContractValue = clients
-    .filter(c => c.status === "active")
-    .reduce((sum, c) => sum + c.contractValue, 0);
+  if (loading) return <div className="p-6">Loading client...</div>;
+  if (error) return <div className="p-6 text-red-600">{error}</div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -206,16 +227,6 @@ export default function Client({ currentUser }: ClientProps) {
             <div className="text-2xl">{clients.filter(c => c.status === "prospect").length}</div>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Total Contract Value</CardTitle>
-            <Building2 className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl">${totalContractValue.toLocaleString()}</div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filters */}
@@ -246,10 +257,10 @@ export default function Client({ currentUser }: ClientProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="prospect">Prospect</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="all">All</SelectItem>                  
+                    {statuses.map(status => (
+                      <SelectItem value={status}>{status}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -269,15 +280,15 @@ export default function Client({ currentUser }: ClientProps) {
                 <TableHead>Client</TableHead>
                 <TableHead>Company</TableHead>
                 <TableHead>Contact</TableHead>
+                <TableHead>Govt Ids</TableHead>
+                <TableHead>Govt Ids Compliance</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Contract Value</TableHead>
-                <TableHead>Last Contact</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredClients.map((client) => (
-                <TableRow key={client.id}>
+                <TableRow key={client.clientId}>
                   <TableCell>
                     <div>
                       <p>{client.name}</p>
@@ -296,10 +307,10 @@ export default function Client({ currentUser }: ClientProps) {
                         <Mail className="h-3 w-3 text-muted-foreground" />
                         {client.email}
                       </div>
-                      {client.phone && (
+                      {client.phoneNum && (
                         <div className="flex items-center gap-2 text-sm">
                           <Phone className="h-3 w-3 text-muted-foreground" />
-                          {client.phone}
+                          {client.phoneNum}
                         </div>
                       )}
                     </div>
@@ -309,8 +320,6 @@ export default function Client({ currentUser }: ClientProps) {
                       {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
                     </Badge>
                   </TableCell>
-                  <TableCell>${client.contractValue.toLocaleString()}</TableCell>
-                  <TableCell>{new Date(client.lastContact).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Button
@@ -324,7 +333,7 @@ export default function Client({ currentUser }: ClientProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteClient(client.id)}
+                          onClick={() => handleDeleteClient(client.clientId)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -340,7 +349,7 @@ export default function Client({ currentUser }: ClientProps) {
 
       {/* Add/Edit Client Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingClient ? "Edit Client" : "Add New Client"}
@@ -350,105 +359,176 @@ export default function Client({ currentUser }: ClientProps) {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Contact Name</Label>
-              <Input
-                id="name"
-                value={formData.name || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Client contact name"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="contact@company.com"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                value={formData.phone || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="(555) 123-4567"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="company">Company</Label>
-              <Input
-                id="company"
-                value={formData.company || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-                placeholder="Company name"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select 
-                value={formData.status || "prospect"} 
-                onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value as any }))}
-              >
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Render all fields from Client model */}
+            <div className="space-y-2 md:col-span-3">
+              <Label>Client Type</Label>
+              <Select  value={formData.clientType || "active"} onValueChange={(value) => setFormData(prev => ({ ...prev, clientType: value as any }))}  >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="prospect">Prospect</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  {clientTypes.map(clientType => (
+                    <SelectItem value={clientType}>{clientType}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="contractValue">Contract Value</Label>
-              <Input
-                id="contractValue"
-                type="number"
-                value={formData.contractValue || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, contractValue: parseInt(e.target.value) || 0 }))}
-                placeholder="0"
-              />
+              <Label>Name</Label>
+              <Input value={formData.name || ""} onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))} placeholder="Name" />
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="lastContact">Last Contact</Label>
-              <Input
-                id="lastContact"
-                type="date"
-                value={formData.lastContact || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, lastContact: e.target.value }))}
-              />
+              <Label>Nationality</Label>
+              <Input value={formData.nationality || ""} onChange={e => setFormData(prev => ({ ...prev, nationality: e.target.value }))} placeholder="Nationality" />
             </div>
-            
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                value={formData.address || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                placeholder="Company address"
-              />
+            <div className="space-y-2">
+              <Label>Date of Birth</Label>
+              <Input type="date" value={formData.dateOfBirth || ""} onChange={e => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))} />
             </div>
-            
+            <div className="space-y-2">
+              <Label>Citizenship</Label>
+              <Input value={formData.citizenship || ""} onChange={e => setFormData(prev => ({ ...prev, citizenship: e.target.value }))} placeholder="Citizenship" />
+            </div>
+            <div className="space-y-2">
+              <Label>Aadhar</Label>
+              <Input value={formData.aadhar || ""} onChange={e => setFormData(prev => ({ ...prev, aadhar: e.target.value }))} placeholder="Aadhar" />
+            </div>
+            <div className="space-y-2">
+              <Label>Sex</Label>
+              <Input value={formData.sex || ""} onChange={e => setFormData(prev => ({ ...prev, sex: e.target.value }))} placeholder="Sex" />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" value={formData.email || ""} onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="Email" />
+            </div>
+            <div className="space-y-2">
+              <Label>Alt Email</Label>
+              <Input type="email" value={formData.altEmail || ""} onChange={e => setFormData(prev => ({ ...prev, altEmail: e.target.value }))} placeholder="Alt Email" />
+            </div>
+            <div className="space-y-2">
+              <Label>Phone</Label>
+              <Input value={formData.phone || ""} onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))} placeholder="Phone" />
+            </div>
+            <div className="space-y-2">
+              <Label>Alt Phone</Label>
+              <Input value={formData.altPhone || ""} onChange={e => setFormData(prev => ({ ...prev, altPhone: e.target.value }))} placeholder="Alt Phone" />
+            </div>
+            <div className="space-y-2">
+              <Label>Address</Label>
+              <Input value={formData.address || ""} onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))} placeholder="Address" />
+            </div>
+            <div className="space-y-2">
+              <Label>State</Label>
+              <Input value={formData.state || ""} onChange={e => setFormData(prev => ({ ...prev, state: e.target.value }))} placeholder="State" />
+            </div>
+            <div className="space-y-2">
+              <Label>Country</Label>
+              <Input value={formData.country || ""} onChange={e => setFormData(prev => ({ ...prev, country: e.target.value }))} placeholder="Country" />
+            </div>            
+            <div className="space-y-2">
+              <Label>IEC</Label>
+              <Input value={formData.IEC || ""} onChange={e => setFormData(prev => ({ ...prev, IEC: e.target.value }))} placeholder="IEC" />
+            </div>
+            <div className="space-y-2">
+              <Label>PAN</Label>
+              <Input value={formData.PAN || ""} onChange={e => setFormData(prev => ({ ...prev, PAN: e.target.value }))} placeholder="PAN" />
+            </div>
+            <div className="space-y-2">
+              <Label>TAN</Label>
+              <Input value={formData.TAN || ""} onChange={e => setFormData(prev => ({ ...prev, TAN: e.target.value }))} placeholder="TAN" />
+            </div>
+            <div className="space-y-2">
+              <Label>DIN</Label>
+              <Input value={formData.DIN || ""} onChange={e => setFormData(prev => ({ ...prev, DIN: e.target.value }))} placeholder="DIN" />
+            </div>
+            <div className="space-y-2">
+              <Label>PF Number</Label>
+              <Input value={formData.PFNum || ""} onChange={e => setFormData(prev => ({ ...prev, PFNum: e.target.value }))} placeholder="PF Number" />
+            </div>
+            <div className="space-y-2">
+              <Label>ESI Number</Label>
+              <Input value={formData.ESINum || ""} onChange={e => setFormData(prev => ({ ...prev, ESINum: e.target.value }))} placeholder="ESI Number" />
+            </div>
+            <div className="space-y-3 md:col-span-2">
+              <Label>Professional Tax Number</Label>
+              <Input value={formData.professionalTaxNum || ""} onChange={e => setFormData(prev => ({ ...prev, professionalTaxNum: e.target.value }))} placeholder="Professional Tax Number" />
+            </div>
+            <div className="space-y-2">
+              <Label>DSC</Label>
+              <Checkbox checked={formData.DSC || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, DSC: checked as boolean }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Properitor</Label>
+              <Checkbox checked={formData.properitor || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, properitor: checked as boolean }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Director</Label>
+              <Checkbox checked={formData.director || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, director: checked as boolean }))} />
+            </div>
+            {(formData.DSC && <div className="space-y-2">
+              <Label>DSC Expiry Date</Label>
+              <Input type="date" value={formData.DSCExpiryDate || ""} onChange={e => setFormData(prev => ({ ...prev, DSCExpiryDate: e.target.value }))} />
+            </div>)}            
+            {(formData.properitor && <div className="space-y-2">
+              <Label>Propreitorship Firm Name</Label>
+              <Input value={formData.propreitorshipFirmName || ""} onChange={e => setFormData(prev => ({ ...prev, propreitorshipFirmName: e.target.value }))} placeholder="Propreitorship Firm Name" />
+            </div>)}
+            {(formData.director && <div className="space-y-2">
+              <Label>Company Name</Label>
+              <Input value={formData.companyName || ""} onChange={e => setFormData(prev => ({ ...prev, companyName: e.target.value }))} placeholder="Company Name" />
+            </div>)}
+            <div className="space-y-2">
+              <Label>Partner</Label>
+              <Checkbox checked={formData.partner || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, partner: checked as boolean }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>KARTA</Label>
+              <Checkbox checked={formData.KARTA || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, KARTA: checked as boolean }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Shareholder</Label>
+              <Checkbox checked={formData.shareholder || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, shareholder: checked as boolean }))} />
+            </div>
+            {(formData.partner && <div className="space-y-2">
+              <Label>Partnership/LLP Name</Label>
+              <Input value={formData.partnership_LLP_Name || ""} onChange={e => setFormData(prev => ({ ...prev, partnership_LLP_Name: e.target.value }))} placeholder="Partnership/LLP Name" />
+            </div>)}
+            {(formData.KARTA && <div className="space-y-2">
+              <Label>HUF Name</Label>
+              <Input value={formData.HUFName || ""} onChange={e => setFormData(prev => ({ ...prev, HUFName: e.target.value }))} placeholder="HUF Name" />
+            </div>)}
+            {(formData.shareholder && <div className="space-y-2">
+              <Label>Shareholder Company Name</Label>
+              <Input value={formData.shareholderCompanyName || ""} onChange={e => setFormData(prev => ({ ...prev, shareholderCompanyName: e.target.value }))} placeholder="Shareholder Company Name" />
+            </div>)}
+            <div className="space-y-2">
+              <Label>Dedicated Manager</Label>
+              <Input value={formData.dedicatedManager || ""} onChange={e => setFormData(prev => ({ ...prev, dedicatedManager: e.target.value }))} placeholder="Dedicated Manager" />
+            </div>
+            <div className="space-y-2">
+              <Label>Dedicated Staff</Label>
+              <Input value={formData.dedicatedStaff || ""} onChange={e => setFormData(prev => ({ ...prev, dedicatedStaff: e.target.value }))} placeholder="Dedicated Staff" />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={formData.status || "active"  } onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>                  
+                    {statuses.map(status => (
+                      <SelectItem value={status}>{status}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              
+              </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Additional notes about the client..."
-                rows={3}
-              />
+              <Label>Notes</Label>
+              <Textarea value={formData.notes || ""} onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))} placeholder="Notes" rows={3} />
             </div>
           </div>
           

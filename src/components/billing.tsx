@@ -9,13 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Badge } from "./ui/badge";
 import { Plus, Edit, Trash2, Search, DollarSign, FileText, Download, Eye } from "lucide-react";
+import { Employee } from "@/types/models";
 
-type User = {
-  id: string;
-  name: string;
-  role: "admin" | "manager" | "employee";
-  email: string;
-};
 
 type Invoice = {
   id: string;
@@ -39,7 +34,7 @@ type InvoiceItem = {
 };
 
 interface BillingProps {
-  currentUser: User;
+  currentUser: Employee;
 }
 
 // Mock invoice data
@@ -89,7 +84,7 @@ const mockInvoices: Invoice[] = [
   }
 ];
 
-export default function Billing({ currentUser }: BillingProps) {
+export default function BillingPage({ currentUser }: BillingProps) {
   const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
