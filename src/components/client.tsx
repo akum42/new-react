@@ -1,6 +1,6 @@
 import { API_PATHS } from '@/constants/apipath';
 import { Client, Employee } from "@/types/models";
-import { Building2, Edit, Mail, Phone, Plus, Search, Trash2 } from "lucide-react";
+import { Building2, Edit, Mail, Phone, Plus, Search, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -101,15 +101,15 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
       ESINum: "",
       professionalTaxNum: "",
       properitor: false,
-      propreitorshipFirmName: "",
+      proprietorshipFirmNames: [],
       director: false,
-      companyName: "",
-      Partner: false,
-      partnership_LLP_Name: "",
+      companyNames: [],
+      partner: false,
+      partnership_LLP_Names: [],
       KARTA: false,
-      HUFName: "",
+      HUFNames: [],
       shareholder: false,
-      shareholderCompanyName: "",
+      shareholderCompanyNames: [],
       dedicatedManager: "",
       dedicatedStaff: "",
       status: "prospect",
@@ -140,6 +140,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
 
   const handleSaveClient = async () => {
     if (!formData.name || !formData.email) return;
+    alert(JSON.stringify(formData));
     try {
       if (editingClient) {
         // Update
@@ -175,6 +176,31 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
       case "prospect": return "bg-blue-100 text-blue-800";
       default: return "bg-gray-100 text-gray-800";
     }
+  };
+
+
+  // Generic array field handlers
+  type ArrayField = 'proprietorshipFirmNames' | 'companyNames' | 'partnership_LLP_Names' | 'HUFNames' | 'shareholderCompanyNames';
+
+  const handleAddArrayField = (field: ArrayField) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: [...((prev[field] as string[]) || []), ""]
+    }));    
+  };
+
+  const handleUpdateArrayField = (field: ArrayField, oldValue: string, newValue: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: ((prev[field] as string[]) || []).map(item => item === oldValue ? newValue : item)
+    }));
+  };
+
+  const handleRemoveArrayField = (field: ArrayField, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: ((prev[field] as string[]) || []).filter(item => item !== value)
+    }));
   };
 
   if (loading) return <div className="p-6">Loading client...</div>;
@@ -277,29 +303,28 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Company</TableHead>
+                <TableHead>Client Type</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Contact</TableHead>
-                <TableHead>Govt Ids</TableHead>
-                <TableHead>Govt Ids Compliance</TableHead>
+                <TableHead>Date Of Birth</TableHead>
+                <TableHead>Aadhar</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredClients.map((client) => (
-                <TableRow key={client.clientId}>
+                <TableRow key={client.clientId}>                  
                   <TableCell>
                     <div>
-                      <p>{client.name}</p>
-                      <p className="text-sm text-muted-foreground">{client.address}</p>
+                     <p>{client.clientType}</p>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                      {client.company}
-                    </div>
+                     <div>
+                        <p>{client.name}</p>
+                        <p className="text-sm text-muted-foreground">{client.address}</p>
+                      </div>
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
@@ -307,10 +332,10 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                         <Mail className="h-3 w-3 text-muted-foreground" />
                         {client.email}
                       </div>
-                      {client.phoneNum && (
+                      {client.phone && (
                         <div className="flex items-center gap-2 text-sm">
                           <Phone className="h-3 w-3 text-muted-foreground" />
-                          {client.phoneNum}
+                          {client.phone}
                         </div>
                       )}
                     </div>
@@ -349,7 +374,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
 
       {/* Add/Edit Client Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingClient ? "Edit Client" : "Add New Client"}
@@ -360,9 +385,9 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
           </DialogHeader>
           
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Render all fields from Client model */}
-            <div className="space-y-2 md:col-span-3">
+            <div className="space-y-2 md:col-span-2">
               <Label>Client Type</Label>
               <Select  value={formData.clientType || "active"} onValueChange={(value) => setFormData(prev => ({ ...prev, clientType: value as any }))}  >
                 <SelectTrigger>
@@ -451,7 +476,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
               <Label>ESI Number</Label>
               <Input value={formData.ESINum || ""} onChange={e => setFormData(prev => ({ ...prev, ESINum: e.target.value }))} placeholder="ESI Number" />
             </div>
-            <div className="space-y-3 md:col-span-2">
+            <div className="space-y-3">
               <Label>Professional Tax Number</Label>
               <Input value={formData.professionalTaxNum || ""} onChange={e => setFormData(prev => ({ ...prev, professionalTaxNum: e.target.value }))} placeholder="Professional Tax Number" />
             </div>
@@ -459,50 +484,175 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
               <Label>DSC</Label>
               <Checkbox checked={formData.DSC || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, DSC: checked as boolean }))} />
             </div>
+            {(formData.DSC && 
+              <div className="space-y-2">
+                <Label>DSC Expiry Date</Label>
+                <Input type="date" value={formData.DSCExpiryDate || ""} onChange={e => setFormData(prev => ({ ...prev, DSCExpiryDate: e.target.value }))} />
+              </div>
+            )} 
+            {(!formData.DSC && 
+              <div className="space-y-2"/>
+            )} 
             <div className="space-y-2">
               <Label>Properitor</Label>
-              <Checkbox checked={formData.properitor || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, properitor: checked as boolean }))} />
-            </div>
+              <Checkbox checked={formData.properitor || false} onCheckedChange={checked => {
+                  const isChecked = checked as boolean;
+                  setFormData(prev => ({
+                    ...prev,
+                    properitor: isChecked,
+                    proprietorshipFirmNames: isChecked ? (prev.proprietorshipFirmNames || []) : []
+                  }));
+                }} />
+            </div>          
+            {(formData.properitor && <div className="space-y-2">
+              <div  className="space-y-2">
+                <Label>Proprietorship Firm</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={() => handleAddArrayField('proprietorshipFirmNames')} className="h-6 w-6 p-0">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {(formData.proprietorshipFirmNames || []).map((proprietorshipFirmName, index) => (
+                <div>
+                  {(formData.proprietorshipFirmNames?.length || 0) > 0 && (
+                    <div className="space-y-2 md:col-span-2" key ={index}>
+                      <h4 className="text-sm font-medium">Firm {index + 1}</h4>
+                      <Input value={proprietorshipFirmName || ""} onChange={(e) => handleUpdateArrayField('proprietorshipFirmNames', proprietorshipFirmName, e.target.value)} placeholder="firm" />
+                      <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveArrayField('proprietorshipFirmNames', proprietorshipFirmName)} className="h-6 w-6 p-0 mt-1">
+                        <X className="h-4 w-4" />
+                      </Button>  
+                    </div>                    
+                  )}
+                </div>
+              ))}
+              </div>
+             )}
+             {(!formData.properitor && 
+              <div className="space-y-2"/>
+            )} 
             <div className="space-y-2">
               <Label>Director</Label>
-              <Checkbox checked={formData.director || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, director: checked as boolean }))} />
-            </div>
-            {(formData.DSC && <div className="space-y-2">
-              <Label>DSC Expiry Date</Label>
-              <Input type="date" value={formData.DSCExpiryDate || ""} onChange={e => setFormData(prev => ({ ...prev, DSCExpiryDate: e.target.value }))} />
-            </div>)}            
-            {(formData.properitor && <div className="space-y-2">
-              <Label>Propreitorship Firm Name</Label>
-              <Input value={formData.propreitorshipFirmName || ""} onChange={e => setFormData(prev => ({ ...prev, propreitorshipFirmName: e.target.value }))} placeholder="Propreitorship Firm Name" />
-            </div>)}
+              <Checkbox checked={formData.director || false} onCheckedChange={checked => {
+                  const isChecked = checked as boolean;
+                  setFormData(prev => ({
+                    ...prev,
+                    director: isChecked,
+                    companyNames: isChecked ? (prev.companyNames || []) : []
+                  }));
+                }} />
+            </div> 
             {(formData.director && <div className="space-y-2">
-              <Label>Company Name</Label>
-              <Input value={formData.companyName || ""} onChange={e => setFormData(prev => ({ ...prev, companyName: e.target.value }))} placeholder="Company Name" />
-            </div>)}
+              <div  className="space-y-2">
+                <Label>Company name</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={() => handleAddArrayField('companyNames')} className="h-6 w-6 p-0">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {(formData.companyNames || []).map((companyName, index) => (
+                <div>
+                  {(formData.companyNames?.length || 0) > 0 && (
+                    <div className="space-y-2 md:col-span-2" key ={index}>
+                      <h4 className="text-sm font-medium">Company {index + 1}</h4>
+                      <Input value={companyName || ""} onChange={(e) => handleUpdateArrayField('companyNames', companyName, e.target.value)} placeholder="company name" />
+                      <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveArrayField('companyNames', companyName)} className="h-6 w-6 p-0 mt-1">
+                        <X className="h-4 w-4" />
+                      </Button>  
+                    </div>                    
+                  )}
+                </div>
+              ))}
+              </div>
+             )}
+             {(!formData.director && 
+              <div className="space-y-2"/>
+            )} 
             <div className="space-y-2">
               <Label>Partner</Label>
               <Checkbox checked={formData.partner || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, partner: checked as boolean }))} />
             </div>
+            {(formData.partner && <div className="space-y-2">
+              <div  className="space-y-2">
+                <Label>Partnership/LLP Names</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={() => handleAddArrayField('partnership_LLP_Names')} className="h-6 w-6 p-0">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {(formData.partnership_LLP_Names || []).map((partnership_LLP_Name, index) => (
+                <div>
+                  {(formData.partnership_LLP_Names?.length || 0) > 0 && (
+                    <div className="space-y-2 md:col-span-2" key ={index}>
+                      <h4 className="text-sm font-medium">LLP {index + 1}</h4>
+                      <Input value={partnership_LLP_Name || ""} onChange={(e) => handleUpdateArrayField('partnership_LLP_Names', partnership_LLP_Name, e.target.value)} placeholder="LLP Name" />
+                      <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveArrayField('partnership_LLP_Names', partnership_LLP_Name)} className="h-6 w-6 p-0 mt-1">
+                        <X className="h-4 w-4" />
+                      </Button>  
+                    </div>                    
+                  )}
+                </div>
+              ))}
+              </div>
+             )}
+             {(!formData.partner && 
+              <div className="space-y-2"/>
+            )} 
             <div className="space-y-2">
               <Label>KARTA</Label>
               <Checkbox checked={formData.KARTA || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, KARTA: checked as boolean }))} />
             </div>
+            {(formData.KARTA && <div className="space-y-2">
+              <div  className="space-y-2">
+                <Label>HUF Name</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={() => handleAddArrayField('HUFNames')} className="h-6 w-6 p-0">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {(formData.HUFNames || []).map((HUFName, index) => (
+                <div>
+                  {(formData.HUFNames?.length || 0) > 0 && (
+                    <div className="space-y-2 md:col-span-2" key ={index}>
+                      <h4 className="text-sm font-medium">HUF {index + 1}</h4>
+                      <Input value={HUFName || ""} onChange={(e) => handleUpdateArrayField('HUFNames', HUFName, e.target.value)} placeholder="HUF name" />
+                      <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveArrayField('HUFNames', HUFName)} className="h-6 w-6 p-0 mt-1">
+                        <X className="h-4 w-4" />
+                      </Button>  
+                    </div>                    
+                  )}
+                </div>
+              ))}
+              </div>
+             )}
+             {(!formData.KARTA && 
+              <div className="space-y-2"/>
+            )} 
             <div className="space-y-2">
               <Label>Shareholder</Label>
               <Checkbox checked={formData.shareholder || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, shareholder: checked as boolean }))} />
-            </div>
-            {(formData.partner && <div className="space-y-2">
-              <Label>Partnership/LLP Name</Label>
-              <Input value={formData.partnership_LLP_Name || ""} onChange={e => setFormData(prev => ({ ...prev, partnership_LLP_Name: e.target.value }))} placeholder="Partnership/LLP Name" />
-            </div>)}
-            {(formData.KARTA && <div className="space-y-2">
-              <Label>HUF Name</Label>
-              <Input value={formData.HUFName || ""} onChange={e => setFormData(prev => ({ ...prev, HUFName: e.target.value }))} placeholder="HUF Name" />
-            </div>)}
+            </div>            
             {(formData.shareholder && <div className="space-y-2">
-              <Label>Shareholder Company Name</Label>
-              <Input value={formData.shareholderCompanyName || ""} onChange={e => setFormData(prev => ({ ...prev, shareholderCompanyName: e.target.value }))} placeholder="Shareholder Company Name" />
-            </div>)}
+              <div  className="space-y-2">
+                <Label>Shareholder Company Name</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={() => handleAddArrayField('shareholderCompanyNames')} className="h-6 w-6 p-0">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {(formData.shareholderCompanyNames || []).map((shareholderCompanyName, index) => (
+                <div>
+                  {(formData.shareholderCompanyNames?.length || 0) > 0 && (
+                    <div className="space-y-2 md:col-span-2" key ={index}>
+                      <h4 className="text-sm font-medium">Company {index + 1}</h4>
+                      <Input value={shareholderCompanyName || ""} onChange={(e) => handleUpdateArrayField('shareholderCompanyNames', shareholderCompanyName, e.target.value)} placeholder="Company name" />
+                      <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveArrayField('shareholderCompanyNames', shareholderCompanyName)} className="h-6 w-6 p-0 mt-1">
+                        <X className="h-4 w-4" />
+                      </Button>  
+                    </div>                    
+                  )}
+                </div>
+              ))}
+              </div>
+             )}
+             {(!formData.shareholder && 
+              <div className="space-y-2"/>
+            )}            
+            
             <div className="space-y-2">
               <Label>Dedicated Manager</Label>
               <Input value={formData.dedicatedManager || ""} onChange={e => setFormData(prev => ({ ...prev, dedicatedManager: e.target.value }))} placeholder="Dedicated Manager" />
