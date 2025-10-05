@@ -1,50 +1,78 @@
-import { useEffect } from 'react';
-import { Outlet, Route, Routes } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { Sidebar } from "./components/sidebar";
+import DashboardPage from "./components/dashboard";
+import EmployeePage from "./components/employee";
+import ClientPage from "./components/client";
+import BillingPage from "./components/billing";
+import TasksPage from "./components/task";
+import TaskTypePage from "./components/TaskTypePage";
 
-import { useTheme } from './context/theme-provider';
-import { NAVIGATION_PATHS } from './constants/navigation';
+import { KEYS, type Employee } from '@/types/models';
+import { API_PATHS } from '@/constants/apipath';
 
-import Home from './views/Home/Home';
-import { Navbar } from '@/components/layout/navbar';
-import UsersPage from '@/views/Users/UsersPage';
-import ClientsPage from '@/views/Clients/ClientsPage';
-import BillingPage from '@/views/Billing/BillingPage';
-import TasksPage from '@/views/Tasks/TasksPage';
-import DashboardPage from '@/views/Dashboard/DashboardPage';
+type Page = "dashboard" | "employees" | "clients" | "billing" | "tasks" | "task-types";
 
-function Layout() {
-  return (
-    <>
-      <Navbar />
-      <Outlet />
-    </>
-  );
-}
 
-function App() {
-  const { theme } = useTheme();
+export default function App() {
+  const [currentPage, setCurrentPage] = useState<Page>("dashboard");
+  const [currentUser, setCurrentUser] = useState<Employee | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, [theme]);
+    fetch(API_PATHS.CURRENT_USER_API_URL, {
+      credentials: 'include'  // send cookies for session
+    }).then(async res => {
+        if (res.status === 401) {
+          window.location.href = API_PATHS.OAUTH2_URL;
+          return;
+        }
+        const data = await res.json();
+        setCurrentUser(data);
+      })
+      .catch(() => {
+        window.location.href = API_PATHS.OAUTH2_URL;
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
+  const renderPage = () => {
+    if (!currentUser) {
+      return null; // Or a loading spinner
+    }
+    switch (currentPage) {
+      case "dashboard":
+        return <DashboardPage currentUser={currentUser} />;
+      case "employees":
+        return <EmployeePage currentUser={currentUser} />;
+      case "clients":
+        return <ClientPage currentUser={currentUser} />;
+      case "billing":
+        return <BillingPage currentUser={currentUser} />;
+      case "tasks":
+        return <TasksPage  currentUser={currentUser} />;
+      case "task-types":
+        return <TaskTypePage currentUser={currentUser} />;
+      default:
+        return <DashboardPage currentUser={currentUser} />;
+    }
+  };
+
+  if (loading) {
+    return <div>Loading...</div>; // Or a more sophisticated loading screen
+  }
+  if (!currentUser) {
+    return <div>Error loading user data.</div>; // Or a redirect to a login page
+  }
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path={NAVIGATION_PATHS.DASHBOARD_PATH} element={<DashboardPage />} />
-        <Route path={NAVIGATION_PATHS.USERS_PATH} element={<UsersPage />} />
-        <Route path={NAVIGATION_PATHS.CLIENTS_PATH} element={<ClientsPage />} />
-        <Route path={NAVIGATION_PATHS.BILLING_PATH} element={<BillingPage />} />
-        <Route path={NAVIGATION_PATHS.TASKS_PATH} element={<TasksPage />} />
-      </Route>
-    </Routes>
+    <div className="flex h-screen bg-background">
+      <Sidebar
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        currentUser={currentUser}
+      />
+      <main className="flex-1 overflow-auto">
+        {renderPage()}
+      </main>
+    </div>
   );
 }
-
-export default App;
