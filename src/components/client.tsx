@@ -374,7 +374,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
 
       {/* Add/Edit Client Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-h-[80vh] overflow-y-auto w-full sm:max-w-[960px]">
           <DialogHeader>
             <DialogTitle>
               {editingClient ? "Edit Client" : "Add New Client"}
