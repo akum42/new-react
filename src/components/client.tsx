@@ -504,36 +504,47 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                   }));
                 }} />
             </div>          
-            {(formData.properitor && <div className="space-y-2">
-              <div  className="space-y-2">
-                <Label>Proprietorship Firm</Label>
-                <Button type="button" variant="ghost" size="sm" onClick={() => handleAddArrayField('proprietorshipFirmNames')} className="h-6 w-6 p-0">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              {(formData.proprietorshipFirmNames?.length || 0) > 0 &&
-                (formData.proprietorshipFirmNames || []).map((proprietorshipFirmName, index) => (
-                  <div className="space-y-2 md:col-span-2" key={`proprietorship-${index}`}>
-                    <h4 className="text-sm font-medium">Firm {index + 1}</h4>
-                    <Input
-                      value={proprietorshipFirmName || ""}
-                      onChange={(e) => handleUpdateArrayField('proprietorshipFirmNames', proprietorshipFirmName, e.target.value)}
-                      placeholder="firm"
-                    />
+            {(formData.properitor && (
+              <div className="md:col-span-2 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Label className="mb-0">Proprietorship Firm</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleAddArrayField('proprietorshipFirmNames')}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {(formData.proprietorshipFirmNames || []).map((proprietorshipFirmName, index) => (
+                  <div
+                    key={`proprietorship-${index}`}
+                    className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] items-start"
+                  >
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Firm {index + 1}</h4>
+                      <Input
+                        value={proprietorshipFirmName || ""}
+                        onChange={(e) => handleUpdateArrayField('proprietorshipFirmNames', proprietorshipFirmName, e.target.value)}
+                        placeholder="firm"
+                      />
+                    </div>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveArrayField('proprietorshipFirmNames', proprietorshipFirmName)}
-                      className="h-6 w-6 p-0 mt-1"
+                      className="h-6 w-6 p-0 mt-6"
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
               </div>
-             )}
-             {(!formData.properitor && 
+            ))}
+             {(!formData.properitor &&
               <div className="space-y-2"/>
             )} 
             <div className="space-y-2">
