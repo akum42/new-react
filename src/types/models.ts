@@ -33,6 +33,8 @@ export interface Client {
   PAN: string,
   TAN: string,
   DIN: string,
+  GST: boolean,
+  GSTNums: string[],
   PFNum: string,
   ESINum: string,
   professionalTaxNum: string,
@@ -50,6 +52,7 @@ export interface Client {
   dedicatedStaff: string,
   status: string;
   notes: string;
+
 }
 
 export interface Billing {

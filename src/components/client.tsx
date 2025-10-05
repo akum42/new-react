@@ -75,46 +75,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
 
   const handleAddClient = () => {
     setEditingClient(null);
-    setFormData({
-      clientType: "",
-      clientId: "",
-      name: "",
-      nationality: "",
-      dateOfBirth: "",
-      citizenship: "",
-      aadhar: "",
-      sex: "",
-      email: "",
-      altEmail: "",
-      phone: "",
-      altPhone: "",
-      address: "",
-      state: "",
-      country: "",
-      DSC: false,
-      DSCExpiryDate: "",
-      IEC: "",
-      PAN: "",
-      TAN: "",
-      DIN: "",
-      PFNum: "",
-      ESINum: "",
-      professionalTaxNum: "",
-      properitor: false,
-      proprietorshipFirmNames: [],
-      director: false,
-      companyNames: [],
-      partner: false,
-      partnership_LLP_Names: [],
-      KARTA: false,
-      HUFNames: [],
-      shareholder: false,
-      shareholderCompanyNames: [],
-      dedicatedManager: "",
-      dedicatedStaff: "",
-      status: "prospect",
-      notes: ""
-    });
+    setFormData({});
     setIsDialogOpen(true);
   };
 
@@ -180,7 +141,8 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
 
 
   // Generic array field handlers
-  type ArrayField = 'proprietorshipFirmNames' | 'companyNames' | 'partnership_LLP_Names' | 'HUFNames' | 'shareholderCompanyNames';
+  type ArrayField = 'proprietorshipFirmNames' | 'companyNames' | 'partnership_LLP_Names' | 'HUFNames' | 'shareholderCompanyNames' | 'GSTNums';
+  
 
   const handleAddArrayField = (field: ArrayField) => {
     setFormData(prev => ({
@@ -342,7 +304,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(client.status)}>
-                      {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
+                      {client.status?.charAt(0).toUpperCase() + client.status?.slice(1)}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -389,7 +351,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             {/* Render all fields from Client model */}
             <div className="space-y-2 md:col-span-2">
               <Label>Client Type</Label>
-              <Select  value={formData.clientType || "active"} onValueChange={(value) => setFormData(prev => ({ ...prev, clientType: value as any }))}  >
+              <Select  value={formData.clientType} onValueChange={(value) => setFormData(prev => ({ ...prev, clientType: value as any }))}  >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -467,7 +429,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             <div className="space-y-2">
               <Label>DIN</Label>
               <Input value={formData.DIN || ""} onChange={e => setFormData(prev => ({ ...prev, DIN: e.target.value }))} placeholder="DIN" />
-            </div>
+            </div>            
             <div className="space-y-2">
               <Label>PF Number</Label>
               <Input value={formData.PFNum || ""} onChange={e => setFormData(prev => ({ ...prev, PFNum: e.target.value }))} placeholder="PF Number" />
@@ -491,6 +453,42 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
               </div>
             )} 
             {(!formData.DSC && 
+              <div className="space-y-2"/>
+            )} 
+            <div className="space-y-2">
+              <Label>GST</Label>
+              <Checkbox checked={formData.GST || false} onCheckedChange={checked => {
+                  const isChecked = checked as boolean;
+                  setFormData(prev => ({
+                    ...prev,
+                    GST: isChecked,
+                    GSTNums: isChecked ? (prev.GSTNums || []) : []
+                  }));
+                }} />
+            </div>          
+            {(formData.GST && <div className="space-y-2">
+              <div  className="space-y-2">
+                <Label>GST Number</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={() => handleAddArrayField('GSTNums')} className="h-6 w-6 p-0">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {(formData.GSTNums || []).map((GSTNum, index) => (
+                <div>
+                  {(formData.GSTNums?.length || 0) > 0 && (
+                    <div className="space-y-2 md:col-span-2" key ={index}>
+                      <h4 className="text-sm font-medium">Firm {index + 1}</h4>
+                      <Input value={GSTNum || ""} onChange={(e) => handleUpdateArrayField('GSTNums', GSTNum, e.target.value)} placeholder="GST Number" />
+                      <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveArrayField('GSTNums', GSTNum)} className="h-6 w-6 p-0 mt-1">
+                        <X className="h-4 w-4" />
+                      </Button>  
+                    </div>                    
+                  )}
+                </div>
+              ))}
+              </div>
+             )}
+             {(!formData.properitor && 
               <div className="space-y-2"/>
             )} 
             <div className="space-y-2">
