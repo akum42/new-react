@@ -511,19 +511,26 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              {(formData.proprietorshipFirmNames || []).map((proprietorshipFirmName, index) => (
-                <div>
-                  {(formData.proprietorshipFirmNames?.length || 0) > 0 && (
-                    <div className="space-y-2 md:col-span-2" key ={index}>
-                      <h4 className="text-sm font-medium">Firm {index + 1}</h4>
-                      <Input value={proprietorshipFirmName || ""} onChange={(e) => handleUpdateArrayField('proprietorshipFirmNames', proprietorshipFirmName, e.target.value)} placeholder="firm" />
-                      <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveArrayField('proprietorshipFirmNames', proprietorshipFirmName)} className="h-6 w-6 p-0 mt-1">
-                        <X className="h-4 w-4" />
-                      </Button>  
-                    </div>                    
-                  )}
-                </div>
-              ))}
+              {(formData.proprietorshipFirmNames?.length || 0) > 0 &&
+                (formData.proprietorshipFirmNames || []).map((proprietorshipFirmName, index) => (
+                  <div className="space-y-2 md:col-span-2" key={`proprietorship-${index}`}>
+                    <h4 className="text-sm font-medium">Firm {index + 1}</h4>
+                    <Input
+                      value={proprietorshipFirmName || ""}
+                      onChange={(e) => handleUpdateArrayField('proprietorshipFirmNames', proprietorshipFirmName, e.target.value)}
+                      placeholder="firm"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveArrayField('proprietorshipFirmNames', proprietorshipFirmName)}
+                      className="h-6 w-6 p-0 mt-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
              )}
              {(!formData.properitor && 
