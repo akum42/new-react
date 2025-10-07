@@ -31,7 +31,58 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
+  const statusOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (statuses || [])
+            .map((status) => status?.trim())
+            .filter((status): status is string => !!status && status.toLowerCase() !== "all")
+        )
+      ),
+    [statuses]
+  );
+
+  const statusFilterOptions = useMemo(
+    () => ["all", ...statusOptions],
+    [statusOptions]
+  );
+
+  const clientTypeOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (clientTypes || [])
+            .map((type) => type?.trim())
+            .filter((type): type is string => !!type)
+        )
+      ),
+    [clientTypes]
+  );
+
+  const addStatusOption = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === "all") return;
+    setStatuses((prev) => {
+      if (prev.some((option) => option.toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, trimmed];
+    });
+  };
+
+  const addClientTypeOption = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setClientTypes((prev) => {
+      if (prev.some((option) => option.toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, trimmed];
+    });
+  };
+
   // Generic fetch helper
   const fetchData = async <T,>(url: string, setter: (data: T) => void, errorMsg: string) => {
     setLoading(true);
