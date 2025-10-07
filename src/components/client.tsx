@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "./ui/input";
 import { ArrayFieldInput } from "./ui/ArrayFieldInput";
 import { Label } from "./ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { CreatableSelect } from "./ui/creatable-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Textarea } from "./ui/textarea";
 import { set } from 'react-hook-form';
@@ -35,6 +35,57 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const statusOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (statuses || [])
+            .map((status) => status?.trim())
+            .filter((status): status is string => !!status && status.toLowerCase() !== "all")
+        )
+      ),
+    [statuses]
+  );
+
+  const statusFilterOptions = useMemo(
+    () => ["all", ...statusOptions],
+    [statusOptions]
+  );
+
+  const clientTypeOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (clientTypes || [])
+            .map((type) => type?.trim())
+            .filter((type): type is string => !!type)
+        )
+      ),
+    [clientTypes]
+  );
+
+  const addStatusOption = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === "all") return;
+    setStatuses((prev) => {
+      if (prev.some((option) => option.toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, trimmed];
+    });
+  };
+
+  const addClientTypeOption = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setClientTypes((prev) => {
+      if (prev.some((option) => option.toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, trimmed];
+    });
+  };
   const [isTableCollapsed, setIsTableCollapsed] = useState(false);
   const [isStatsCollapsed, setIsStatsCollapsed] = useState(false);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(false);
@@ -262,20 +313,21 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    {statuses.map(status => (
-                      <SelectItem value={status}>{status}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <CreatableSelect
+                value={statusFilter}
+                options={statusFilterOptions}
+                onChange={(value) => setStatusFilter(value ?? "all")}
+                onCreateOption={(newStatus) => {
+                  addStatusOption(newStatus);
+                  setStatusFilter(newStatus);
+                }}
+                placeholder="Filter by status"
+                isClearable={false}
+              />
             </div>
           </CardContent>
         )}
@@ -366,7 +418,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
 
       {/* Add/Edit Client Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-h-[80vh] overflow-y-auto w-full sm:max-w-[960px]">
           <DialogHeader>
             <DialogTitle>
               {editingClient ? "Edit Client" : "Add New Client"}
@@ -380,16 +432,16 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             {/* Render all fields from Client model */}
             <div className="space-y-2 md:col-span-2">
               <Label>Client Type</Label>
-              <Select value={formData.clientType || "Individual"} onValueChange={(value) => setFormData(prev => ({ ...prev, clientType: value as any }))}  >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientTypes.map(clientType => (
-                    <SelectItem value={clientType}>{clientType}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CreatableSelect
+                value={formData.clientType ?? undefined}
+                options={clientTypeOptions}
+                onChange={(value) => setFormData(prev => ({ ...prev, clientType: value ?? undefined }))}
+                onCreateOption={(newType) => {
+                  addClientTypeOption(newType);
+                  setFormData(prev => ({ ...prev, clientType: newType }));
+                }}
+                placeholder="Select or create a client type"
+              />
             </div>
             <div className="space-y-2">
               <Label>Name</Label>
@@ -497,6 +549,112 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
               <Label>Professional Tax Number</Label>
               <Input value={formData.professionalTaxNum || ""} onChange={e => setFormData(prev => ({ ...prev, professionalTaxNum: e.target.value }))} placeholder="Professional Tax Number" />
             </div>
+            <div className="space-y-2">
+              <Label>DSC</Label>
+              <Checkbox checked={formData.DSC || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, DSC: checked as boolean }))} />
+            </div>
+            {(formData.DSC && 
+              <div className="space-y-2">
+                <Label>DSC Expiry Date</Label>
+                <Input type="date" value={formData.DSCExpiryDate || ""} onChange={e => setFormData(prev => ({ ...prev, DSCExpiryDate: e.target.value }))} />
+              </div>
+            )} 
+            {(!formData.DSC && 
+              <div className="space-y-2"/>
+            )} 
+            <div className="space-y-2">
+              <Label>Properitor</Label>
+              <Checkbox checked={formData.properitor || false} onCheckedChange={checked => {
+                  const isChecked = checked as boolean;
+                  setFormData(prev => ({
+                    ...prev,
+                    properitor: isChecked,
+                    proprietorshipFirmNames: isChecked ? (prev.proprietorshipFirmNames || []) : []
+                  }));
+                }} />
+            </div>          
+            {(formData.properitor && (
+              <div className="md:col-span-2 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Label className="mb-0">Proprietorship Firm</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleAddArrayField('proprietorshipFirmNames')}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {(formData.proprietorshipFirmNames || []).map((proprietorshipFirmName, index) => (
+                  <div
+                    key={`proprietorship-${index}`}
+                    className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] items-start"
+                  >
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Firm {index + 1}</h4>
+                      <Input
+                        value={proprietorshipFirmName || ""}
+                        onChange={(e) => handleUpdateArrayField('proprietorshipFirmNames', proprietorshipFirmName, e.target.value)}
+                        placeholder="firm"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveArrayField('proprietorshipFirmNames', proprietorshipFirmName)}
+                      className="h-6 w-6 p-0 mt-6"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ))}
+             {(!formData.properitor &&
+              <div className="space-y-2"/>
+            )} 
+            <div className="space-y-2">
+              <Label>Director</Label>
+              <Checkbox checked={formData.director || false} onCheckedChange={checked => {
+                  const isChecked = checked as boolean;
+                  setFormData(prev => ({
+                    ...prev,
+                    director: isChecked,
+                    companyNames: isChecked ? (prev.companyNames || []) : []
+                  }));
+                }} />
+            </div> 
+            {(formData.director && <div className="space-y-2">
+              <div  className="space-y-2">
+                <Label>Company name</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={() => handleAddArrayField('companyNames')} className="h-6 w-6 p-0">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {(formData.companyNames || []).map((companyName, index) => (
+                <div>
+                  {(formData.companyNames?.length || 0) > 0 && (
+                    <div className="space-y-2 md:col-span-2" key ={index}>
+                      <h4 className="text-sm font-medium">Company {index + 1}</h4>
+                      <Input value={companyName || ""} onChange={(e) => handleUpdateArrayField('companyNames', companyName, e.target.value)} placeholder="company name" />
+                      <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveArrayField('companyNames', companyName)} className="h-6 w-6 p-0 mt-1">
+                        <X className="h-4 w-4" />
+                      </Button>  
+                    </div>                    
+                  )}
+                </div>
+              ))}
+              </div>
+             )}
+             {(!formData.director && 
+              <div className="space-y-2"/>
+            )} 
+            <div className="space-y-2">
+              <Label>Partner</Label>
+              <Checkbox checked={formData.partner || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, partner: checked as boolean }))} />
             <div className="space-y-3">
               <Label>Tax Audit</Label>
               <Input value={formData.taxAudit || ""} onChange={e => setFormData(prev => ({ ...prev, taxAudit: e.target.value }))} placeholder="Professional Tax Number" />
@@ -819,18 +977,18 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={formData.status || "active"} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  {statuses.map(status => (
-                    <SelectItem value={status}>{status}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <CreatableSelect
+                value={formData.status ?? undefined}
+                options={statusOptions}
+                onChange={(value) => setFormData(prev => ({ ...prev, status: value ?? undefined }))}
+                onCreateOption={(newStatus) => {
+                  addStatusOption(newStatus);
+                  setFormData(prev => ({ ...prev, status: newStatus }));
+                }}
+                placeholder="Select or create a status"
+              />
+
+              </div>
             <div className="space-y-2 md:col-span-2">
               <Label>Notes</Label>
               <Textarea value={formData.notes || ""} onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))} placeholder="Notes" rows={3} />

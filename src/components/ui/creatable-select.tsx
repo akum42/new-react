@@ -1,0 +1,174 @@
+import { useEffect, useMemo, useState } from "react";
+import CreatableSelectLib from "react-select/creatable";
+import type { StylesConfig, InputActionMeta } from "react-select";
+
+interface Option {
+  value: string;
+  label: string;
+}
+
+interface CreatableSelectProps {
+  value?: string | null;
+  options: string[];
+  onChange: (value: string | null) => void;
+  onCreateOption?: (value: string) => void;
+  placeholder?: string;
+  isClearable?: boolean;
+  isDisabled?: boolean;
+  isSearchable?: boolean;
+  className?: string;
+}
+
+export function CreatableSelect({
+  value,
+  options,
+  onChange,
+  onCreateOption,
+  placeholder,
+  isClearable = false,
+  isDisabled = false,
+  isSearchable = true,
+  className,
+}: CreatableSelectProps) {
+  const [menuPortalTarget, setMenuPortalTarget] = useState<HTMLElement | null>(null);
+  const [searchValue, setSearchValue] = useState("");
+
+  useEffect(() => {
+    setMenuPortalTarget(document.body);
+  }, []);
+
+  const normalizedOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const uniqueOptions: Option[] = [];
+
+    options.forEach((option) => {
+      const trimmed = option?.trim();
+      if (!trimmed) return;
+      const key = trimmed.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      uniqueOptions.push({ value: trimmed, label: trimmed });
+    });
+
+    return uniqueOptions;
+  }, [options]);
+
+  const selectedOption = useMemo(() => {
+    if (!value) return null;
+    const match = normalizedOptions.find((option) => option.value === value);
+    if (match) {
+      return match;
+    }
+    const fallback: Option = { value, label: value };
+    return fallback;
+  }, [value, normalizedOptions]);
+
+  const styles = useMemo<StylesConfig<Option, false>>(
+    () => ({
+      control: (provided, state) => ({
+        ...provided,
+        backgroundColor: "hsl(var(--background))",
+        borderColor: state.isFocused ? "hsl(var(--ring))" : "hsl(var(--input))",
+        boxShadow: state.isFocused ? "0 0 0 1px hsl(var(--ring))" : "none",
+        minHeight: "2.5rem",
+        borderRadius: "var(--radius)",
+        ":hover": {
+          borderColor: "hsl(var(--ring))",
+        },
+      }),
+      menu: (provided) => ({
+        ...provided,
+        backgroundColor: "hsl(var(--popover))",
+        color: "hsl(var(--popover-foreground))",
+        borderRadius: "var(--radius)",
+        overflow: "hidden",
+      }),
+      menuPortal: (provided) => ({
+        ...provided,
+        zIndex: 9999,
+      }),
+      option: (provided, state) => ({
+        ...provided,
+        backgroundColor: state.isFocused ? "hsl(var(--accent))" : "transparent",
+        color: state.isFocused ? "hsl(var(--accent-foreground))" : "hsl(var(--popover-foreground))",
+        cursor: "pointer",
+      }),
+      singleValue: (provided) => ({
+        ...provided,
+        color: "hsl(var(--foreground))",
+      }),
+      placeholder: (provided) => ({
+        ...provided,
+        color: "hsl(var(--muted-foreground))",
+      }),
+      input: (provided) => ({
+        ...provided,
+        color: "hsl(var(--foreground))",
+      }),
+      valueContainer: (provided) => ({
+        ...provided,
+        padding: "0.25rem 0.5rem",
+      }),
+      indicatorsContainer: (provided) => ({
+        ...provided,
+        color: "hsl(var(--muted-foreground))",
+      }),
+      dropdownIndicator: (provided, state) => ({
+        ...provided,
+        color: state.isFocused ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+        ":hover": {
+          color: "hsl(var(--foreground))",
+        },
+      }),
+      clearIndicator: (provided) => ({
+        ...provided,
+        color: "hsl(var(--muted-foreground))",
+        ":hover": {
+          color: "hsl(var(--foreground))",
+        },
+      }),
+    }),
+    []
+  );
+
+  return (
+    <CreatableSelectLib<Option, false>
+      className={className}
+      classNamePrefix="creatable-select"
+      value={selectedOption}
+      options={normalizedOptions}
+      styles={styles}
+      isClearable={isClearable}
+      isDisabled={isDisabled}
+      isSearchable={isSearchable}
+      placeholder={placeholder}
+      inputValue={searchValue}
+      onInputChange={(newValue, actionMeta: InputActionMeta) => {
+        if (actionMeta.action === "input-change") {
+          setSearchValue(newValue);
+        } else if (
+          actionMeta.action === "menu-close" ||
+          actionMeta.action === "input-blur" ||
+          actionMeta.action === "set-value"
+        ) {
+          setSearchValue("");
+        }
+      }}
+      onChange={(option) => {
+        setSearchValue("");
+        onChange(option?.value ?? null);
+      }}
+      onCreateOption={(inputValue) => {
+        const trimmed = inputValue.trim();
+        if (!trimmed) return;
+        onCreateOption?.(trimmed);
+        setSearchValue("");
+        onChange(trimmed);
+      }}
+      formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
+      noOptionsMessage={() => (searchValue ? "No matches. Press enter to create." : "Type to add options")}
+      menuPortalTarget={menuPortalTarget ?? undefined}
+      menuPosition={menuPortalTarget ? "fixed" : "absolute"}
+    />
+  );
+}
