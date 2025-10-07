@@ -6,6 +6,8 @@ const CURRENT_USER_API_URL = "http://localhost:8080/api/users/me";
 const OAUTH2_URL = "http://localhost:8080/oauth2/authorization/google";
 const CLIENT_API_URL = "http://localhost:8080/api/clients";
 const CLIENT_TYPE_API_URL = "http://localhost:8080/api/clients/clienttypes";
+const CLIENT_INDIAN_STATES_URL = "http://localhost:8080/api/clients/states";
+const CLIENT_COUNTRIES_URL = "http://localhost:8080/api/clients/countries";
 const BILLING_PATH = '/billing';
 const TASKS_PATH = '/tasks';
 const DASHBOARD_PATH = '/dashboard';
@@ -19,6 +21,8 @@ export const API_PATHS = {
   OAUTH2_URL,
   CLIENT_API_URL,
   CLIENT_TYPE_API_URL,
+  CLIENT_INDIAN_STATES_URL,
+  CLIENT_COUNTRIES_URL,
   BILLING_PATH,
   TASKS_PATH,
   DASHBOARD_PATH,

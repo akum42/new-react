@@ -12,8 +12,8 @@ export interface Employee {
 }
 
 export interface Client {
-  clientType: string,
   clientId: string,
+  clientType: string,
   name: string,
   nationality: string,
   dateOfBirth: string,
@@ -33,26 +33,41 @@ export interface Client {
   PAN: string,
   TAN: string,
   DIN: string,
+  CIN: string,
   GST: boolean,
   GSTNums: string[],
   PFNum: string,
   ESINum: string,
   professionalTaxNum: string,
+  taxAudit: string,
+  isINC20ACompliance: boolean,
+  INC20AComplianceDate: string,
+  isLLPIN: boolean,
+  LLPIN: string,
+  hasSocietyNum: boolean,
+  societyNum: string,
   properitor: boolean,
   proprietorshipFirmNames: string[],
   director: boolean,
   companyNames:  string[],
+  directorNames:  string[],
   partner: boolean,
   partnership_LLP_Names:  string[],
-  KARTA: boolean,
+  isKARTA: boolean,
   HUFNames:  string[],
   shareholder: boolean,
   shareholderCompanyNames:  string[],
+  numOfShares:  string[],
+  shareholderNames:  string[],
+  partnerPercentage:  string[],
+  partnerNames:  string[],
+  propreitors: string[],
+  members: string[],
+  kartaNames: string[],
   dedicatedManager: string,
   dedicatedStaff: string,
   status: string;
   notes: string;
-
 }
 
 export interface Billing {
