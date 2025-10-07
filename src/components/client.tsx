@@ -1,7 +1,7 @@
 import { API_PATHS } from '@/constants/apipath';
 import { Client, Employee } from "@/types/models";
 import { Building2, Edit, Mail, Phone, Plus, Search, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -9,7 +9,7 @@ import { Checkbox } from "./ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { CreatableSelect } from "./ui/creatable-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Textarea } from "./ui/textarea";
 
