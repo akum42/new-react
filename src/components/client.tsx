@@ -732,18 +732,17 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={formData.status || "active"  } onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>                  
-                    {statuses.map(status => (
-                      <SelectItem value={status}>{status}</SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              
+              <CreatableSelect
+                value={formData.status ?? undefined}
+                options={statusOptions}
+                onChange={(value) => setFormData(prev => ({ ...prev, status: value ?? undefined }))}
+                onCreateOption={(newStatus) => {
+                  addStatusOption(newStatus);
+                  setFormData(prev => ({ ...prev, status: newStatus }));
+                }}
+                placeholder="Select or create a status"
+              />
+
               </div>
             <div className="space-y-2 md:col-span-2">
               <Label>Notes</Label>
