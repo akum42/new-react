@@ -35,18 +35,29 @@ export function CreatableSelect({
   }, []);
 
   const normalizedOptions = useMemo(() => {
-    const entries = options
-      .map((option) => option?.trim())
-      .filter((option): option is string => !!option)
-      .map((option) => [option, { value: option, label: option } as Option]);
+    const seen = new Set<string>();
+    const uniqueOptions: Option[] = [];
 
-    return Array.from(new Map(entries).values());
+    options.forEach((option) => {
+      const trimmed = option?.trim();
+      if (!trimmed) return;
+      const key = trimmed.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      uniqueOptions.push({ value: trimmed, label: trimmed });
+    });
+
+    return uniqueOptions;
   }, [options]);
 
   const selectedOption = useMemo(() => {
     if (!value) return null;
     const match = normalizedOptions.find((option) => option.value === value);
-    return match ?? { value, label: value };
+    if (match) {
+      return match;
+    }
+    const fallback: Option = { value, label: value };
+    return fallback;
   }, [value, normalizedOptions]);
 
   const styles = useMemo<StylesConfig<Option, false>>(
