@@ -440,16 +440,16 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             {/* Render all fields from Client model */}
             <div className="space-y-2 md:col-span-2">
               <Label>Client Type</Label>
-              <Select  value={formData.clientType || "active"} onValueChange={(value) => setFormData(prev => ({ ...prev, clientType: value as any }))}  >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientTypes.map(clientType => (
-                    <SelectItem value={clientType}>{clientType}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CreatableSelect
+                value={formData.clientType ?? undefined}
+                options={clientTypeOptions}
+                onChange={(value) => setFormData(prev => ({ ...prev, clientType: value ?? undefined }))}
+                onCreateOption={(newType) => {
+                  addClientTypeOption(newType);
+                  setFormData(prev => ({ ...prev, clientType: newType }));
+                }}
+                placeholder="Select or create a client type"
+              />
             </div>
             <div className="space-y-2">
               <Label>Name</Label>
