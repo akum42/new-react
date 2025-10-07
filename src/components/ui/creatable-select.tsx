@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import CreatableSelectLib from "react-select/creatable";
-import type { StylesConfig } from "react-select";
+import type { StylesConfig, InputActionMeta } from "react-select";
 
 interface Option {
   value: string;
@@ -15,6 +15,7 @@ interface CreatableSelectProps {
   placeholder?: string;
   isClearable?: boolean;
   isDisabled?: boolean;
+  isSearchable?: boolean;
   className?: string;
 }
 
@@ -26,9 +27,11 @@ export function CreatableSelect({
   placeholder,
   isClearable = false,
   isDisabled = false,
+  isSearchable = true,
   className,
 }: CreatableSelectProps) {
   const [menuPortalTarget, setMenuPortalTarget] = useState<HTMLElement | null>(null);
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
     setMenuPortalTarget(document.body);
@@ -137,16 +140,29 @@ export function CreatableSelect({
       styles={styles}
       isClearable={isClearable}
       isDisabled={isDisabled}
+      isSearchable={isSearchable}
       placeholder={placeholder}
-      onChange={(option) => onChange(option?.value ?? null)}
+      inputValue={searchValue}
+      onInputChange={(newValue, actionMeta: InputActionMeta) => {
+        if (actionMeta.action === "input-change") {
+          setSearchValue(newValue);
+        } else if (actionMeta.action === "menu-close" || actionMeta.action === "input-blur") {
+          setSearchValue("");
+        }
+      }}
+      onChange={(option) => {
+        setSearchValue("");
+        onChange(option?.value ?? null);
+      }}
       onCreateOption={(inputValue) => {
         const trimmed = inputValue.trim();
         if (!trimmed) return;
         onCreateOption?.(trimmed);
+        setSearchValue("");
         onChange(trimmed);
       }}
       formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
-      noOptionsMessage={() => "Type to add options"}
+      noOptionsMessage={() => (searchValue ? "No matches. Press enter to create." : "Type to add options")}
       menuPortalTarget={menuPortalTarget ?? undefined}
       menuPosition={menuPortalTarget ? "fixed" : "absolute"}
     />
