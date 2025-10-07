@@ -329,17 +329,17 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>                  
-                    {statuses.map(status => (
-                      <SelectItem value={status}>{status}</SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <CreatableSelect
+                value={statusFilter}
+                options={statusFilterOptions}
+                onChange={(value) => setStatusFilter(value ?? "all")}
+                onCreateOption={(newStatus) => {
+                  addStatusOption(newStatus);
+                  setStatusFilter(newStatus);
+                }}
+                placeholder="Filter by status"
+                isClearable={false}
+              />
             </div>
           </div>
         </CardContent>
