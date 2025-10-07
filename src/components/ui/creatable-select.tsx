@@ -146,7 +146,11 @@ export function CreatableSelect({
       onInputChange={(newValue, actionMeta: InputActionMeta) => {
         if (actionMeta.action === "input-change") {
           setSearchValue(newValue);
-        } else if (actionMeta.action === "menu-close" || actionMeta.action === "input-blur") {
+        } else if (
+          actionMeta.action === "menu-close" ||
+          actionMeta.action === "input-blur" ||
+          actionMeta.action === "set-value"
+        ) {
           setSearchValue("");
         }
       }}
