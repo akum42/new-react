@@ -34,8 +34,6 @@ export interface Client {
   TAN: string,
   DIN: string,
   CIN: string,
-  GST: boolean,
-  GSTNums: string[],
   PFNum: string,
   ESINum: string,
   professionalTaxNum: string,
@@ -46,28 +44,35 @@ export interface Client {
   LLPIN: string,
   hasSocietyNum: boolean,
   societyNum: string,
-  properitor: boolean,
+  GSTNums: string[],
   proprietorshipFirmNames: string[],
-  director: boolean,
   companyNames:  string[],
-  directorNames:  string[],
-  partner: boolean,
-  partnership_LLP_Names:  string[],
-  isKARTA: boolean,
   HUFNames:  string[],
-  shareholder: boolean,
   shareholderCompanyNames:  string[],
-  numOfShares:  string[],
-  shareholderNames:  string[],
-  partnerPercentage:  string[],
-  partnerNames:  string[],
-  propreitors: string[],
-  members: string[],
   kartaNames: string[],
+  personNames:  Person[],
   dedicatedManager: string,
   dedicatedStaff: string,
   status: string;
   notes: string;
+}
+
+export interface Person {
+  PersonId: string;
+  PersonType: string;
+  Director: string;
+  Partner: string;
+  Shareholder: string;
+  Propreitor: string;
+  Member: string;
+  Designation: string;
+  DIN: string;
+  ShareNumber: string;
+  Percentage: string;
+  email: string;
+  phone: string;
+  address: string;
+  PAN: string;
 }
 
 export interface Billing {

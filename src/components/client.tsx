@@ -1,19 +1,19 @@
 import { API_PATHS } from '@/constants/apipath';
-import { Client, Employee } from "@/types/models";
+import { Client, Employee, Person } from "@/types/models";
 import { Building2, ChevronDown, ChevronUp, Edit, Mail, Phone, Plus, Search, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrayFieldInput } from "./ui/ArrayFieldInput";
+import { ArrayFieldsInput } from "./ui/ArrayFieldsInput";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Checkbox } from "./ui/checkbox";
+import { CreatableSelect } from "./ui/creatable-select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
-import { ArrayFieldInput } from "./ui/ArrayFieldInput";
 import { Label } from "./ui/label";
-import { CreatableSelect } from "./ui/creatable-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Textarea } from "./ui/textarea";
-import { set } from 'react-hook-form';
 
 
 interface EmployeeProps {
@@ -32,9 +32,14 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [formData, setFormData] = useState<Partial<Client>>({});
+  const [helperFormData, setHelperFormData] = useState<Partial<Person>>({});
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isTableCollapsed, setIsTableCollapsed] = useState(false);
+  const [isStatsCollapsed, setIsStatsCollapsed] = useState(false);
+  const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(false);
+  const [isAddClientTableCollapsed, setAddClientTableCollapsed] = useState(false);
 
   const statusOptions = useMemo(
     () =>
@@ -86,10 +91,53 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
       return [...prev, trimmed];
     });
   };
-  const [isTableCollapsed, setIsTableCollapsed] = useState(false);
-  const [isStatsCollapsed, setIsStatsCollapsed] = useState(false);
-  const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(false);
-  const [isAddClientTableCollapsed, setAddClientTableCollapsed] = useState(false);
+
+  const indianStatesOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (indianStates || [])
+            .map((state) => state?.trim())
+            .filter((state): state is string => !!state && state.toLowerCase() !== "all")
+        )
+      ),
+    [indianStates]
+  );
+
+  const countriesOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (countries || [])
+            .map((type) => type?.trim())
+            .filter((type): type is string => !!type)
+        )
+      ),
+    [countries]
+  );
+
+  const addIndianStatesOption = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === "all") return;
+    setIndianStates((prev) => {
+      if (prev.some((option) => option.toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, trimmed];
+    });
+  };
+
+  const addCountriesOption = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setCountries((prev) => {
+      if (prev.some((option) => option.toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, trimmed];
+    });
+  };
+
 
   // Generic fetch helper
   const fetchData = async <T,>(url: string, setter: (data: T) => void, errorMsg: string) => {
@@ -204,7 +252,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
   };
 
   // Generic array field handlers
-  type ArrayField = 'proprietorshipFirmNames' | 'companyNames' | 'partnership_LLP_Names' | 'HUFNames' | 'shareholderCompanyNames' | 'GSTNums' | 'shareholderNames' | 'directorNames' | 'partnerNames' | 'kartaNames' | 'propreitors' | 'members' | 'partnerPercentage' | 'numOfShares';
+  type ArrayField = 'GSTNums' | 'proprietorshipFirmNames' | 'companyNames' | 'HUFNames' | 'shareholderCompanyNames' | 'kartaNames';
 
   const handleAddArrayField = (field: ArrayField) => {
     setFormData(prev => ({
@@ -226,6 +274,31 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
       [field]: ((prev[field] as string[]) || []).filter(item => item !== value)
     }));
   };
+
+  // Generic person field handlers
+  type personField = 'personNames';
+
+  const handleAddPersonField = (field: personField, person: Person) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: [...((prev[field] as Person[]) || []), person]
+    }));
+  };
+
+  const handleUpdatePersonField = (field: personField, oldValue: Person, newValue: Person) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: ((prev[field] as Person[]) || []).map(item => item === oldValue ? newValue : item)
+    }));
+  };
+
+  const handleRemovePersonField = (field: personField, value: Person) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: ((prev[field] as Person[]) || []).filter(item => item !== value)
+    }));
+  };
+
 
   if (loading) return <div className="p-6">Loading client...</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
@@ -314,7 +387,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                 </div>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Status</Label>
               <CreatableSelect
@@ -418,7 +491,8 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
 
       {/* Add/Edit Client Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto w-full sm:max-w-[960px]">
+        <DialogContent className="max-h-[80vh] overflow-y-auto w-full sm:max-w-[860px] ">
+
           <DialogHeader>
             <DialogTitle>
               {editingClient ? "Edit Client" : "Add New Client"}
@@ -428,9 +502,9 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {/* Render all fields from Client model */}
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2 md:col-span-3">
               <Label>Client Type</Label>
               <CreatableSelect
                 value={formData.clientType ?? undefined}
@@ -489,31 +563,29 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             </div>
             <div className="space-y-2">
               <Label>State</Label>
-              <Select value={formData.state || "DELHI"} onValueChange={(value) => setFormData(prev => ({ ...prev, state: value as any }))}  >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {indianStates.map(state => (
-                    <SelectItem value={state}>{state}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CreatableSelect
+                value={formData.state ?? undefined}
+                options={indianStatesOptions}
+                onChange={(value) => setFormData(prev => ({ ...prev, state: value ?? undefined }))}
+                onCreateOption={(newType) => {
+                  addIndianStatesOption(newType);
+                  setFormData(prev => ({ ...prev, state: newType }));
+                }}
+                placeholder="Select or create a state"
+              />
             </div>
             <div className="space-y-2">
               <Label>Country</Label>
-              <Select value={formData.country || "INDIA"} onValueChange={(value) => setFormData(prev => ({ ...prev, country: value as any }))}  >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {countries.map(country => (
-                    <SelectItem value={country}>{country}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CreatableSelect
+                value={formData.country ?? undefined}
+                options={countriesOptions}
+                onChange={(value) => setFormData(prev => ({ ...prev, country: value ?? undefined }))}
+                onCreateOption={(newType) => {
+                  addCountriesOption(newType);
+                  setFormData(prev => ({ ...prev, country: newType }));
+                }}
+                placeholder="Select or create a country"
+              />
             </div>
             <div className="space-y-2">
               <Label>IEC</Label>
@@ -549,424 +621,169 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
               <Label>Professional Tax Number</Label>
               <Input value={formData.professionalTaxNum || ""} onChange={e => setFormData(prev => ({ ...prev, professionalTaxNum: e.target.value }))} placeholder="Professional Tax Number" />
             </div>
-            <div className="space-y-2">
-              <Label>DSC</Label>
-              <Checkbox checked={formData.DSC || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, DSC: checked as boolean }))} />
-            </div>
-            {(formData.DSC && 
-              <div className="space-y-2">
-                <Label>DSC Expiry Date</Label>
-                <Input type="date" value={formData.DSCExpiryDate || ""} onChange={e => setFormData(prev => ({ ...prev, DSCExpiryDate: e.target.value }))} />
-              </div>
-            )} 
-            {(!formData.DSC && 
-              <div className="space-y-2"/>
-            )} 
-            <div className="space-y-2">
-              <Label>Properitor</Label>
-              <Checkbox checked={formData.properitor || false} onCheckedChange={checked => {
-                  const isChecked = checked as boolean;
-                  setFormData(prev => ({
-                    ...prev,
-                    properitor: isChecked,
-                    proprietorshipFirmNames: isChecked ? (prev.proprietorshipFirmNames || []) : []
-                  }));
-                }} />
-            </div>          
-            {(formData.properitor && (
-              <div className="md:col-span-2 space-y-4">
-                <div className="flex items-center gap-2">
-                  <Label className="mb-0">Proprietorship Firm</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleAddArrayField('proprietorshipFirmNames')}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                {(formData.proprietorshipFirmNames || []).map((proprietorshipFirmName, index) => (
-                  <div
-                    key={`proprietorship-${index}`}
-                    className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] items-start"
-                  >
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium">Firm {index + 1}</h4>
-                      <Input
-                        value={proprietorshipFirmName || ""}
-                        onChange={(e) => handleUpdateArrayField('proprietorshipFirmNames', proprietorshipFirmName, e.target.value)}
-                        placeholder="firm"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveArrayField('proprietorshipFirmNames', proprietorshipFirmName)}
-                      className="h-6 w-6 p-0 mt-6"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ))}
-             {(!formData.properitor &&
-              <div className="space-y-2"/>
-            )} 
-            <div className="space-y-2">
-              <Label>Director</Label>
-              <Checkbox checked={formData.director || false} onCheckedChange={checked => {
-                  const isChecked = checked as boolean;
-                  setFormData(prev => ({
-                    ...prev,
-                    director: isChecked,
-                    companyNames: isChecked ? (prev.companyNames || []) : []
-                  }));
-                }} />
-            </div> 
-            {(formData.director && <div className="space-y-2">
-              <div  className="space-y-2">
-                <Label>Company name</Label>
-                <Button type="button" variant="ghost" size="sm" onClick={() => handleAddArrayField('companyNames')} className="h-6 w-6 p-0">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              {(formData.companyNames || []).map((companyName, index) => (
-                <div>
-                  {(formData.companyNames?.length || 0) > 0 && (
-                    <div className="space-y-2 md:col-span-2" key ={index}>
-                      <h4 className="text-sm font-medium">Company {index + 1}</h4>
-                      <Input value={companyName || ""} onChange={(e) => handleUpdateArrayField('companyNames', companyName, e.target.value)} placeholder="company name" />
-                      <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveArrayField('companyNames', companyName)} className="h-6 w-6 p-0 mt-1">
-                        <X className="h-4 w-4" />
-                      </Button>  
-                    </div>                    
-                  )}
-                </div>
-              ))}
-              </div>
-             )}
-             {(!formData.director && 
-              <div className="space-y-2"/>
-            )} 
-            <div className="space-y-2">
-              <Label>Partner</Label>
-              <Checkbox checked={formData.partner || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, partner: checked as boolean }))} />
             <div className="space-y-3">
               <Label>Tax Audit</Label>
               <Input value={formData.taxAudit || ""} onChange={e => setFormData(prev => ({ ...prev, taxAudit: e.target.value }))} placeholder="Professional Tax Number" />
             </div>
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
+              <Label>DSC</Label>
+              <Checkbox checked={formData.DSC || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, DSC: checked as boolean }))} />
+            </div>
+            {(formData.DSC &&
+              <div className="space-y-2">
+                <Label>DSC Expiry Date</Label>
+                <Input type="date" value={formData.DSCExpiryDate || ""} onChange={e => setFormData(prev => ({ ...prev, DSCExpiryDate: e.target.value }))} />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>INC 20A Compliance</Label>
+              <Checkbox checked={formData.isINC20ACompliance || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, isINC20ACompliance: checked as boolean }))} />
+            </div>
+            {(formData.isINC20ACompliance &&
+              <div className="space-y-2">
+                <Label>Compliance Date</Label>
+                <Input type="date" value={formData.INC20AComplianceDate || ""} onChange={e => setFormData(prev => ({ ...prev, INC20AComplianceDate: e.target.value }))} />
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <ArrayFieldInput
+                label="GST Numbers"
+                values={formData.GSTNums || []}
+                onAdd={() => handleAddArrayField('GSTNums')}
+                onUpdate={(oldValue, newValue) => handleUpdateArrayField('GSTNums', oldValue, newValue)}
+                onRemove={value => handleRemoveArrayField('GSTNums', value)}
+                placeholder="GST Number"
+                itemLabelPrefix="GST"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <ArrayFieldInput
+                label="Proprietorship Firm"
+                values={formData.proprietorshipFirmNames || []}
+                onAdd={() => handleAddArrayField('proprietorshipFirmNames')}
+                onUpdate={(oldValue, newValue) => handleUpdateArrayField('proprietorshipFirmNames', oldValue, newValue)}
+                onRemove={value => handleRemoveArrayField('proprietorshipFirmNames', value)}
+                placeholder="Firm Number"
+                itemLabelPrefix="Firm"
+              />
+            </div>
+            <div className="space-y-2">
+              <ArrayFieldInput
+                label="Director's Company Names"
+                values={formData.companyNames || []}
+                onAdd={() => handleAddArrayField('companyNames')}
+                onUpdate={(oldValue, newValue) => handleUpdateArrayField('companyNames', oldValue, newValue)}
+                onRemove={value => handleRemoveArrayField('companyNames', value)}
+                placeholder="Company name"
+                itemLabelPrefix="Company"
+              />
+            </div>
+            <div className="space-y-2">
+              <ArrayFieldInput
+                label="Karta's HUF Names"
+                values={formData.HUFNames || []}
+                onAdd={() => handleAddArrayField('HUFNames')}
+                onUpdate={(oldValue, newValue) => handleUpdateArrayField('HUFNames', oldValue, newValue)}
+                onRemove={value => handleRemoveArrayField('HUFNames', value)}
+                placeholder="HUF name"
+                itemLabelPrefix="HUF"
+              />
+            </div>
+            <div className="space-y-2">
+              <ArrayFieldInput
+                label="Shareholder Company Names"
+                values={formData.shareholderCompanyNames || []}
+                onAdd={() => handleAddArrayField('shareholderCompanyNames')}
+                onUpdate={(oldValue, newValue) => handleUpdateArrayField('shareholderCompanyNames', oldValue, newValue)}
+                onRemove={value => handleRemoveArrayField('shareholderCompanyNames', value)}
+                placeholder="Company name"
+                itemLabelPrefix="Company"
+              />
+            </div>
+            <div className="space-y-2">
+              <ArrayFieldInput
+                label="Karta Names"
+                values={formData.kartaNames || []}
+                onAdd={() => handleAddArrayField('kartaNames')}
+                onUpdate={(oldValue, newValue) => handleUpdateArrayField('kartaNames', oldValue, newValue)}
+                onRemove={value => handleRemoveArrayField('kartaNames', value)}
+                placeholder="Karta name"
+                itemLabelPrefix="Karta"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="space-y-2 md:col-span-3  gap-4">
               <Button variant="ghost" size="sm" onClick={() => setAddClientTableCollapsed(!isAddClientTableCollapsed)}>
                 {isAddClientTableCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </Button>
-              {!isAddClientTableCollapsed && (
-                <Table className="w-full">
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>
-                        <ArrayFieldInput
-                          label="GST Numbers"
-                          values={formData.GSTNums || []}
-                          onAdd={() => handleAddArrayField('GSTNums')}
-                          onUpdate={(oldValue, newValue) => handleUpdateArrayField('GSTNums', oldValue, newValue)}
-                          onRemove={value => handleRemoveArrayField('GSTNums', value)}
-                          placeholder="GST Number"
-                          itemLabelPrefix="GST"
-                        />
-                      </TableCell><TableCell />
-                    </TableRow>
-                    {(formData.clientType && ["HUF"].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <ArrayFieldInput
-                            label="Name of Karta"
-                            values={formData.kartaNames || []}
-                            onAdd={() => handleAddArrayField('kartaNames')}
-                            onUpdate={(oldValue, newValue) => handleUpdateArrayField('kartaNames', oldValue, newValue)}
-                            onRemove={value => handleRemoveArrayField('kartaNames', value)}
-                            placeholder="karta Name"
-                            itemLabelPrefix="kartaNames"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && ["Pvt Ltd Company", "Public Ltd", "OPC Company", "LLP"].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <ArrayFieldInput
-                            label="Director Names"
-                            values={formData.companyNames || []}
-                            onAdd={() => handleAddArrayField('directorNames')}
-                            onUpdate={(oldValue, newValue) => handleUpdateArrayField('directorNames', oldValue, newValue)}
-                            onRemove={value => handleRemoveArrayField('directorNames', value)}
-                            placeholder="Director Name"
-                            itemLabelPrefix="Director"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && ["Pvt Ltd Company", "Public Ltd", "OPC Company"].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <ArrayFieldInput
-                            label="Shareholder Names"
-                            values={formData.shareholderNames || []}
-                            onAdd={() => handleAddArrayField('shareholderNames')}
-                            onUpdate={(oldValue, newValue) => handleUpdateArrayField('shareholderNames', oldValue, newValue)}
-                            onRemove={value => handleRemoveArrayField('shareholderNames', value)}
-                            placeholder="ShareholderNames"
-                            itemLabelPrefix="Shareholder"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <ArrayFieldInput
-                            label="NumOfShares"
-                            values={formData.numOfShares || []}
-                            onAdd={() => handleAddArrayField('numOfShares')}
-                            onUpdate={(oldValue, newValue) => handleUpdateArrayField('numOfShares', oldValue, newValue)}
-                            onRemove={value => handleRemoveArrayField('numOfShares', value)}
-                            placeholder="NumOfShares"
-                            itemLabelPrefix=""
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && ["Partnership Firm"].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <ArrayFieldInput
-                            label="Partner Name"
-                            values={formData.partnerNames || []}
-                            onAdd={() => handleAddArrayField('partnerNames')}
-                            onUpdate={(oldValue, newValue) => handleUpdateArrayField('partnerNames', oldValue, newValue)}
-                            onRemove={value => handleRemoveArrayField('partnerNames', value)}
-                            placeholder="Partner Name"
-                            itemLabelPrefix="Partner"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <ArrayFieldInput
-                            label="Percentage"
-                            values={formData.partnerPercentage || []}
-                            onAdd={() => handleAddArrayField('partnerPercentage')}
-                            onUpdate={(oldValue, newValue) => handleUpdateArrayField('partnerPercentage', oldValue, newValue)}
-                            onRemove={value => handleRemoveArrayField('partnerPercentage', value)}
-                            placeholder="%"
-                            itemLabelPrefix=""
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && ["Pvt Ltd Company", "Public Ltd", "OPC Company"].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <Label>INC 20A Compliance</Label>
-                            <Checkbox checked={formData.isINC20ACompliance || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, isINC20ACompliance: checked as boolean }))} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {(formData.isINC20ACompliance &&
-                            <div className="space-y-2">
-                              <Label>INC 20A Compliance Date</Label>
-                              <Input type="date" value={formData.INC20AComplianceDate || ""} onChange={e => setFormData(prev => ({ ...prev, INC20AComplianceDate: e.target.value }))} />
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && [""].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <Label>Society/Trust Reg.</Label>
-                            <Checkbox checked={formData.hasSocietyNum || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, hasSocietyNum: checked as boolean }))} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {(formData.hasSocietyNum &&
-                            <div className="space-y-2">
-                              <Label>Society/Trust Reg. Number</Label>
-                              <Input type="date" value={formData.societyNum || ""} onChange={e => setFormData(prev => ({ ...prev, societyNum: e.target.value }))} />
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && ["LLP"].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <Label>LLPIN</Label>
-                            <Checkbox checked={formData.isLLPIN || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, isLLPIN: checked as boolean }))} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {(formData.isLLPIN &&
-                            <div className="space-y-2">
-                              <Label>LLPIN</Label>
-                              <Input type="date" value={formData.LLPIN || ""} onChange={e => setFormData(prev => ({ ...prev, LLPIN: e.target.value }))} />
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && ["Individual"].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <Label>DSC</Label>
-                            <Checkbox checked={formData.DSC || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, DSC: checked as boolean }))} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {(formData.DSC &&
-                            <div className="space-y-2">
-                              <Label>DSC Expiry Date</Label>
-                              <Input type="date" value={formData.DSCExpiryDate || ""} onChange={e => setFormData(prev => ({ ...prev, DSCExpiryDate: e.target.value }))} />
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && ["Individual"].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <Label>Properitor</Label>
-                            <Checkbox checked={formData.properitor || false} onCheckedChange={checked => {
-                              const isChecked = checked as boolean;
-                              setFormData(prev => ({
-                                ...prev,
-                                properitor: isChecked,
-                                proprietorshipFirmNames: isChecked ? (prev.proprietorshipFirmNames || []) : []
-                              }));
-                            }} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {formData.properitor && (
-                            <ArrayFieldInput
-                              label="Proprietorship Firm"
-                              values={formData.proprietorshipFirmNames || []}
-                              onAdd={() => handleAddArrayField('proprietorshipFirmNames')}
-                              onUpdate={(oldValue, newValue) => handleUpdateArrayField('proprietorshipFirmNames', oldValue, newValue)}
-                              onRemove={value => handleRemoveArrayField('proprietorshipFirmNames', value)}
-                              placeholder="Firm"
-                              itemLabelPrefix="Firm"
-                            />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && ["Individual",].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <Label>Director</Label>
-                            <Checkbox checked={formData.director || false} onCheckedChange={checked => {
-                              const isChecked = checked as boolean;
-                              setFormData(prev => ({
-                                ...prev,
-                                director: isChecked,
-                                companyNames: isChecked ? (prev.companyNames || []) : []
-                              }));
-                            }} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {formData.director && (
-                            <ArrayFieldInput
-                              label="Company Name"
-                              values={formData.companyNames || []}
-                              onAdd={() => handleAddArrayField('companyNames')}
-                              onUpdate={(oldValue, newValue) => handleUpdateArrayField('companyNames', oldValue, newValue)}
-                              onRemove={value => handleRemoveArrayField('companyNames', value)}
-                              placeholder="Company Name"
-                              itemLabelPrefix="Company"
-                            />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && ["Individual",].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <Label>Partner</Label>
-                            <Checkbox checked={formData.partner || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, partner: checked as boolean }))} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {formData.partner && (
-                            <ArrayFieldInput
-                              label="Partnership/LLP Name"
-                              values={formData.partnership_LLP_Names || []}
-                              onAdd={() => handleAddArrayField('partnership_LLP_Names')}
-                              onUpdate={(oldValue, newValue) => handleUpdateArrayField('partnership_LLP_Names', oldValue, newValue)}
-                              onRemove={value => handleRemoveArrayField('partnership_LLP_Names', value)}
-                              placeholder="LLP Name"
-                              itemLabelPrefix="LLP"
-                            />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && ["Individual",].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <Label>KARTA</Label>
-                            <Checkbox checked={formData.isKARTA || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, isKARTA: checked as boolean }))} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {formData.isKARTA && (
-                            <ArrayFieldInput
-                              label="HUF Name"
-                              values={formData.HUFNames || []}
-                              onAdd={() => handleAddArrayField('HUFNames')}
-                              onUpdate={(oldValue, newValue) => handleUpdateArrayField('HUFNames', oldValue, newValue)}
-                              onRemove={value => handleRemoveArrayField('HUFNames', value)}
-                              placeholder="HUF Name"
-                              itemLabelPrefix="HUF"
-                            />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(formData.clientType && ["Individual", "HUF", "Pvt Ltd Company", "Public Ltd", "OPC Company", "LLP",].includes(formData.clientType) && (
-                      <TableRow>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <Label>Shareholder</Label>
-                            <Checkbox checked={formData.shareholder || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, shareholder: checked as boolean }))} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {formData.shareholder && (
-                            <ArrayFieldInput
-                              label="Shareholder Company Name"
-                              values={formData.shareholderCompanyNames || []}
-                              onAdd={() => handleAddArrayField('shareholderCompanyNames')}
-                              onUpdate={(oldValue, newValue) => handleUpdateArrayField('shareholderCompanyNames', oldValue, newValue)}
-                              onRemove={value => handleRemoveArrayField('shareholderCompanyNames', value)}
-                              placeholder="Company Name"
-                              itemLabelPrefix="Company"
-                            />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
             </div>
+            {!isAddClientTableCollapsed && (
+              <div className="space-y-2 md:col-span-3  gap-4">
+                <div className="space-y-2">
+                  <ArrayFieldsInput
+                    label="Directors"
+                    values={formData.personNames || [{ Director: '', DIN: '', email: '', phone: '', address: '', PAN: '' } as Person]}
+                    onAdd={() => handleAddPersonField('personNames', { Director: '', DIN: '', email: '', phone: '', address: '', PAN: '' } as Person)}
+                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('personNames', oldValue, newValue)}
+                    onRemove={value => handleRemovePersonField('personNames', value)}
+                    placeholder={[]}
+                    itemLabelPrefix=""
+                  />
+                </div>
+                <div className="space-y-2">
+                  <ArrayFieldsInput
+                    label="Shareholders"
+                    values={formData.personNames || [{ Shareholder: '', ShareNumber: '', email: '', phone: '', address: '', PAN: '' } as Person]}
+                    onAdd={() => handleAddPersonField('personNames', { Shareholder: '', ShareNumber: '', email: '', phone: '', address: '', PAN: '' } as Person)}
+                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('personNames', oldValue, newValue)}
+                    onRemove={value => handleRemovePersonField('personNames', value)}
+                    placeholder={[]}
+                    itemLabelPrefix=""
+                  />
+                </div>
+                <div className="space-y-2">
+                  <ArrayFieldsInput
+                    label="Designated Partner"
+                    values={formData.personNames || [{ Partner: '', Percentage: '', email: '', phone: '', address: '', PAN: '' } as Person]}
+                    onAdd={() => handleAddPersonField('personNames', { Partner: '', Percentage: '', email: '', phone: '', address: '', PAN: '' } as Person)}
+                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('personNames', oldValue, newValue)}
+                    onRemove={value => handleRemovePersonField('personNames', value)}
+                    placeholder={[]}
+                    itemLabelPrefix=""
+                  />
+                </div>
+                <div className="space-y-2">
+                  <ArrayFieldsInput
+                    label="Propreitors"
+                    values={formData.personNames || [{ Propreitor: '', email: '', phone: '', address: '', PAN: '' } as Person]}
+                    onAdd={() => handleAddPersonField('personNames', { Propreitor: '', email: '', phone: '', address: '', PAN: '' } as Person)}
+                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('personNames', oldValue, newValue)}
+                    onRemove={value => handleRemovePersonField('personNames', value)}
+                    placeholder={[]}
+                    itemLabelPrefix=""
+                  />
+                </div>
+                <div className="space-y-2">
+                  <ArrayFieldsInput
+                    label="Members"
+                    values={formData.personNames || [{ Member: '', Designation: '', email: '', phone: '', address: '', PAN: '' } as Person]}
+                    onAdd={() => handleAddPersonField('personNames', { Member: '', Designation: '', email: '', phone: '', address: '', PAN: '' } as Person)}
+                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('personNames', oldValue, newValue)}
+                    onRemove={value => handleRemovePersonField('personNames', value)}
+                    placeholder={[]}
+                    itemLabelPrefix=""
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Dedicated Manager</Label>
               <Input value={formData.dedicatedManager || ""} onChange={e => setFormData(prev => ({ ...prev, dedicatedManager: e.target.value }))} placeholder="Dedicated Manager" />
@@ -988,11 +805,12 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                 placeholder="Select or create a status"
               />
 
-              </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label>Notes</Label>
-              <Textarea value={formData.notes || ""} onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))} placeholder="Notes" rows={3} />
             </div>
+          </div>
+
+          <div className="space-y-2 md:grid-cols-3 gap-42">
+            <Label>Notes</Label>
+            <Textarea value={formData.notes || ""} onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))} placeholder="Notes" rows={3} />
           </div>
 
           <DialogFooter>
@@ -1003,8 +821,9 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
               {editingClient ? "Update" : "Create"} Client
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+
+        </DialogContent >
+      </Dialog >
+    </div >
   );
-}
+} 
