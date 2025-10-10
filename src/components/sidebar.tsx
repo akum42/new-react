@@ -1,8 +1,8 @@
-import { 
-  LayoutDashboard, 
-  Users, 
-  UserCheck, 
-  CreditCard, 
+import {
+  LayoutDashboard,
+  Users,
+  UserCheck,
+  CreditCard,
   CheckSquare,
   LogOut,
   Building2,
@@ -54,7 +54,7 @@ export function Sidebar({ currentPage, setCurrentPage, currentUser }: SidebarPro
           <Building2 className="h-8 w-8 text-primary" />
           <span className="text-lg">BPM System</span>
         </div>
-        
+
         {/* User info */}
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">

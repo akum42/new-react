@@ -6,38 +6,24 @@ import ClientPage from "./components/client";
 import BillingPage from "./components/billing";
 import TasksPage from "./components/task";
 import TaskTypePage from "./components/TaskTypePage";
+import LoginPage from "./components/login";
 
+import { useAuth, AuthProvider } from "./components/login";
 import { KEYS, type Employee } from '@/types/models';
 import { API_PATHS } from '@/constants/apipath';
 
-type Page = "dashboard" | "employees" | "clients" | "billing" | "tasks" | "task-types";
-
+type Page = "dashboard" | "employees" | "clients" | "billing" | "tasks" | "task-types" | "login";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>("dashboard");
+  const { user, logout } = useAuth();
+  const [currentPage, setCurrentPage] = useState<Page>("login");
   const [currentUser, setCurrentUser] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch(API_PATHS.CURRENT_USER_API_URL, {
-      credentials: 'include'  // send cookies for session
-    }).then(async res => {
-        if (res.status === 401) {
-          window.location.href = API_PATHS.OAUTH2_URL;
-          return;
-        }
-        const data = await res.json();
-        setCurrentUser(data);
-      })
-      .catch(() => {
-        window.location.href = API_PATHS.OAUTH2_URL;
-      })
-      .finally(() => setLoading(false));
-  }, []);
 
   const renderPage = () => {
     if (!currentUser) {
-      return null; // Or a loading spinner
+      return <LoginPage />;
     }
     switch (currentPage) {
       case "dashboard":
@@ -49,7 +35,7 @@ export default function App() {
       case "billing":
         return <BillingPage currentUser={currentUser} />;
       case "tasks":
-        return <TasksPage  currentUser={currentUser} />;
+        return <TasksPage currentUser={currentUser} />;
       case "task-types":
         return <TaskTypePage currentUser={currentUser} />;
       default:
@@ -57,22 +43,32 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    if (user) {
+      setCurrentUser(user);
+      setCurrentPage("dashboard"); // Redirect to dashboard after login
+    } else {
+      setCurrentUser(null);
+      setCurrentPage("login"); // Go to login page if no user
+    }
+    setLoading(false);
+  }, [user]);
+
   if (loading) {
     return <div>Loading...</div>; // Or a more sophisticated loading screen
   }
-  if (!currentUser) {
-    return <div>Error loading user data.</div>; // Or a redirect to a login page
-  }
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        currentUser={currentUser}
-      />
-      <main className="flex-1 overflow-auto">
-        {renderPage()}
-      </main>
-    </div>
+    <AuthProvider>
+      <div className="flex h-screen bg-background">
+        <Sidebar
+          currentPage={currentPage as Exclude<Page, "login">} // Cast currentPage to exclude "login"
+          setCurrentPage={setCurrentPage} // Pass setCurrentPage directly
+    currentUser={currentUser as any} // currentUser is guaranteed to be not null here
+        />
+        <main className="flex-1 overflow-auto">
+          {renderPage()}
+        </main>
+      </div>
+    </AuthProvider>
   );
 }
