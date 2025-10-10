@@ -15,11 +15,9 @@ import { Label } from "./ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Textarea } from "./ui/textarea";
 
-
 interface EmployeeProps {
   currentUser: Employee;
 }
-
 
 export default function ClientPage({ currentUser }: EmployeeProps) {
   const [clients, setClients] = useState<Client[]>([]);
@@ -27,6 +25,8 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [statuses, setStatuses] = useState<string[]>([]);
+  const [dedicatedManagers, setDedicatedManagers] = useState<String[]>([]);
+  const [dedicatedEmployees, setDedicatedEmployees] = useState<String[]>([]);
   const [indianStates, setIndianStates] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -37,8 +37,8 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isTableCollapsed, setIsTableCollapsed] = useState(false);
-  const [isStatsCollapsed, setIsStatsCollapsed] = useState(false);
-  const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(false);
+  const [isStatsCollapsed, setIsStatsCollapsed] = useState(true);
+  const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [isAddClientTableCollapsed, setAddClientTableCollapsed] = useState(false);
 
   const statusOptions = useMemo(
@@ -51,6 +51,30 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
         )
       ),
     [statuses]
+  );
+
+  const dedicatedManagerOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (dedicatedManagers || [])
+            .map((employee) => employee?.trim())
+            .filter((name): name is string => !!name && name.toLowerCase() !== "all")
+        )
+      ),
+    [dedicatedManagers]
+  );
+
+  const dedicatedStaffsOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (dedicatedEmployees || [])
+            .map((employee) => employee?.trim())
+            .filter((name): name is string => !!name && name.toLowerCase() !== "all")
+        )
+      ),
+    [dedicatedEmployees]
   );
 
   const statusFilterOptions = useMemo(
@@ -69,28 +93,6 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
       ),
     [clientTypes]
   );
-
-  const addStatusOption = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed || trimmed.toLowerCase() === "all") return;
-    setStatuses((prev) => {
-      if (prev.some((option) => option.toLowerCase() === trimmed.toLowerCase())) {
-        return prev;
-      }
-      return [...prev, trimmed];
-    });
-  };
-
-  const addClientTypeOption = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return;
-    setClientTypes((prev) => {
-      if (prev.some((option) => option.toLowerCase() === trimmed.toLowerCase())) {
-        return prev;
-      }
-      return [...prev, trimmed];
-    });
-  };
 
   const indianStatesOptions = useMemo(
     () =>
@@ -115,6 +117,50 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
       ),
     [countries]
   );
+
+  const addStatusOption = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === "all") return;
+    setStatuses((prev) => {
+      if (prev.some((option) => option.toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, trimmed];
+    });
+  };
+
+  const addDedicateManagersOption = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === "all") return;
+    setDedicatedManagers((prev) => {
+      if (prev.some((option) => option?.toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, trimmed];
+    });
+  };
+
+  const addDedicateStaffsOption = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === "all") return;
+    setDedicatedEmployees((prev) => {
+      if (prev.some((option) => option?.toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, trimmed];
+    });
+  };
+
+  const addClientTypeOption = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setClientTypes((prev) => {
+      if (prev.some((option) => option.toLowerCase() === trimmed.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, trimmed];
+    });
+  };
 
   const addIndianStatesOption = (value: string) => {
     const trimmed = value.trim();
@@ -159,15 +205,18 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
   const fetchClients = () => fetchData<Client[]>(API_PATHS.CLIENT_API_URL, setClients, 'Failed to fetch clients');
   const fetchClientTypes = () => fetchData<string[]>(API_PATHS.CLIENT_TYPE_API_URL, setClientTypes, 'Failed to fetch client types');
   const fetchStatuses = () => fetchData<string[]>(API_PATHS.USERS_STATUS_URL, setStatuses, 'Failed to fetch statuses');
+  const fetchDedicatedManagers = () => fetchData<string[]>(API_PATHS.USERS_MANAGERS_URL, setDedicatedManagers, 'Failed to fetch dedicated managers');
+  const fetchDedicatedEmployees = () => fetchData<string[]>(API_PATHS.USERS_EMPLOYEES_URL, setDedicatedEmployees, 'Failed to fetch employee managers');
   const fetchIndianStates = () => fetchData<string[]>(API_PATHS.CLIENT_INDIAN_STATES_URL, setIndianStates, 'Failed to fetch states');
   const fetchCountries = () => fetchData<string[]>(API_PATHS.CLIENT_COUNTRIES_URL, setCountries, 'Failed to fetch countries');
-
 
 
   useEffect(() => {
     fetchClientTypes();
     fetchClients();
     fetchStatuses();
+    fetchDedicatedManagers();
+    fetchDedicatedEmployees();
     fetchIndianStates();
     fetchCountries();
   }, []);
@@ -252,7 +301,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
   };
 
   // Generic array field handlers
-  type ArrayField = 'GSTNums' | 'proprietorshipFirmNames' | 'companyNames' | 'HUFNames' | 'shareholderCompanyNames' | 'kartaNames';
+  type ArrayField = 'gstnums' | 'proprietorshipFirmNames' | 'companyNames' | 'shareholderCompanyNames' | 'kartaNames' | 'hufnames';
 
   const handleAddArrayField = (field: ArrayField) => {
     setFormData(prev => ({
@@ -276,7 +325,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
   };
 
   // Generic person field handlers
-  type personField = 'personNames';
+  type personField = 'directorNames' | 'shareholdersNames' | 'designatedPartnerNames' | 'propreitorsNames' | 'membersNames';
 
   const handleAddPersonField = (field: personField, person: Person) => {
     setFormData(prev => ({
@@ -386,21 +435,21 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                   />
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <CreatableSelect
-                value={statusFilter}
-                options={statusFilterOptions}
-                onChange={(value) => setStatusFilter(value ?? "all")}
-                onCreateOption={(newStatus) => {
-                  addStatusOption(newStatus);
-                  setStatusFilter(newStatus);
-                }}
-                placeholder="Filter by status"
-                isClearable={false}
-              />
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <CreatableSelect
+                  value={statusFilter}
+                  options={statusFilterOptions}
+                  onChange={(value) => setStatusFilter(value ?? "all")}
+                  onCreateOption={(newStatus) => {
+                    addStatusOption(newStatus);
+                    setStatusFilter(newStatus);
+                  }}
+                  placeholder="Filter by status"
+                  isClearable={false}
+                />
+              </div>
             </div>
           </CardContent>
         )}
@@ -422,8 +471,6 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                   <TableHead>Client Type</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Date Of Birth</TableHead>
-                  <TableHead>Aadhar</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -589,33 +636,33 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             </div>
             <div className="space-y-2">
               <Label>IEC</Label>
-              <Input value={formData.IEC || ""} onChange={e => setFormData(prev => ({ ...prev, IEC: e.target.value }))} placeholder="IEC" />
+              <Input value={formData.iec || ""} onChange={e => setFormData(prev => ({ ...prev, iec: e.target.value }))} placeholder="IEC" />
             </div>
             <div className="space-y-2">
               <Label>PAN</Label>
-              <Input value={formData.PAN || ""} onChange={e => setFormData(prev => ({ ...prev, PAN: e.target.value }))} placeholder="PAN" />
+              <Input value={formData.pan || ""} onChange={e => setFormData(prev => ({ ...prev, pan: e.target.value }))} placeholder="PAN" />
             </div>
             <div className="space-y-2">
               <Label>TAN</Label>
-              <Input value={formData.TAN || ""} onChange={e => setFormData(prev => ({ ...prev, TAN: e.target.value }))} placeholder="TAN" />
+              <Input value={formData.tan || ""} onChange={e => setFormData(prev => ({ ...prev, tan: e.target.value }))} placeholder="TAN" />
             </div>
             <div className="space-y-2">
               <Label>DIN</Label>
-              <Input value={formData.DIN || ""} onChange={e => setFormData(prev => ({ ...prev, DIN: e.target.value }))} placeholder="DIN" />
+              <Input value={formData.din || ""} onChange={e => setFormData(prev => ({ ...prev, din: e.target.value }))} placeholder="DIN" />
             </div>
             {(formData.clientType && ["Pvt Ltd Company", "Public Ltd", "OPC Company", "Trust/Society", "Foreign Company",].includes(formData.clientType)) && (
               <div className="space-y-2">
                 <Label>CIN</Label>
-                <Input value={formData.CIN || ""} onChange={e => setFormData(prev => ({ ...prev, CIN: e.target.value }))} placeholder="CIN" />
+                <Input value={formData.cin || ""} onChange={e => setFormData(prev => ({ ...prev, cin: e.target.value }))} placeholder="CIN" />
               </div>
             )}
             <div className="space-y-2">
               <Label>PF Number</Label>
-              <Input value={formData.PFNum || ""} onChange={e => setFormData(prev => ({ ...prev, PFNum: e.target.value }))} placeholder="PF Number" />
+              <Input value={formData.pfnum || ""} onChange={e => setFormData(prev => ({ ...prev, pfnum: e.target.value }))} placeholder="PF Number" />
             </div>
             <div className="space-y-2">
               <Label>ESI Number</Label>
-              <Input value={formData.ESINum || ""} onChange={e => setFormData(prev => ({ ...prev, ESINum: e.target.value }))} placeholder="ESI Number" />
+              <Input value={formData.esinum || ""} onChange={e => setFormData(prev => ({ ...prev, esinum: e.target.value }))} placeholder="ESI Number" />
             </div>
             <div className="space-y-3">
               <Label>Professional Tax Number</Label>
@@ -627,12 +674,12 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             </div>
             <div className="space-y-2">
               <Label>DSC</Label>
-              <Checkbox checked={formData.DSC || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, DSC: checked as boolean }))} />
+              <Checkbox checked={formData.dsc || false} onCheckedChange={checked => setFormData(prev => ({ ...prev, dsc: checked as boolean }))} />
             </div>
-            {(formData.DSC &&
+            {(formData.dsc &&
               <div className="space-y-2">
                 <Label>DSC Expiry Date</Label>
-                <Input type="date" value={formData.DSCExpiryDate || ""} onChange={e => setFormData(prev => ({ ...prev, DSCExpiryDate: e.target.value }))} />
+                <Input type="date" value={formData.dscexpiryDate || ""} onChange={e => setFormData(prev => ({ ...prev, dscexpiryDate: e.target.value }))} />
               </div>
             )}
             <div className="space-y-2">
@@ -642,7 +689,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             {(formData.isINC20ACompliance &&
               <div className="space-y-2">
                 <Label>Compliance Date</Label>
-                <Input type="date" value={formData.INC20AComplianceDate || ""} onChange={e => setFormData(prev => ({ ...prev, INC20AComplianceDate: e.target.value }))} />
+                <Input type="date" value={formData.inc20AComplianceDate || ""} onChange={e => setFormData(prev => ({ ...prev, inc20AComplianceDate: e.target.value }))} />
               </div>
             )}
           </div>
@@ -651,10 +698,10 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             <div className="space-y-2">
               <ArrayFieldInput
                 label="GST Numbers"
-                values={formData.GSTNums || []}
-                onAdd={() => handleAddArrayField('GSTNums')}
-                onUpdate={(oldValue, newValue) => handleUpdateArrayField('GSTNums', oldValue, newValue)}
-                onRemove={value => handleRemoveArrayField('GSTNums', value)}
+                values={formData.gstnums || []}
+                onAdd={() => handleAddArrayField('gstnums')}
+                onUpdate={(oldValue, newValue) => handleUpdateArrayField('gstnums', oldValue, newValue)}
+                onRemove={value => handleRemoveArrayField('gstnums', value)}
                 placeholder="GST Number"
                 itemLabelPrefix="GST"
               />
@@ -684,10 +731,10 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             <div className="space-y-2">
               <ArrayFieldInput
                 label="Karta's HUF Names"
-                values={formData.HUFNames || []}
-                onAdd={() => handleAddArrayField('HUFNames')}
-                onUpdate={(oldValue, newValue) => handleUpdateArrayField('HUFNames', oldValue, newValue)}
-                onRemove={value => handleRemoveArrayField('HUFNames', value)}
+                values={formData.hufnames || []}
+                onAdd={() => handleAddArrayField('hufnames')}
+                onUpdate={(oldValue, newValue) => handleUpdateArrayField('hufnames', oldValue, newValue)}
+                onRemove={value => handleRemoveArrayField('hufnames', value)}
                 placeholder="HUF name"
                 itemLabelPrefix="HUF"
               />
@@ -727,10 +774,10 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                 <div className="space-y-2">
                   <ArrayFieldsInput
                     label="Directors"
-                    values={formData.personNames || [{ Director: '', DIN: '', email: '', phone: '', address: '', PAN: '' } as Person]}
-                    onAdd={() => handleAddPersonField('personNames', { Director: '', DIN: '', email: '', phone: '', address: '', PAN: '' } as Person)}
-                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('personNames', oldValue, newValue)}
-                    onRemove={value => handleRemovePersonField('personNames', value)}
+                    values={formData.directorNames || []}
+                    onAdd={() => handleAddPersonField('directorNames', { director: '', din: '', email: '', phone: '', address: '', pan: '' } as Person)}
+                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('directorNames', oldValue, newValue)}
+                    onRemove={value => handleRemovePersonField('directorNames', value)}
                     placeholder={[]}
                     itemLabelPrefix=""
                   />
@@ -738,10 +785,10 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                 <div className="space-y-2">
                   <ArrayFieldsInput
                     label="Shareholders"
-                    values={formData.personNames || [{ Shareholder: '', ShareNumber: '', email: '', phone: '', address: '', PAN: '' } as Person]}
-                    onAdd={() => handleAddPersonField('personNames', { Shareholder: '', ShareNumber: '', email: '', phone: '', address: '', PAN: '' } as Person)}
-                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('personNames', oldValue, newValue)}
-                    onRemove={value => handleRemovePersonField('personNames', value)}
+                    values={formData.shareholdersNames || []}
+                    onAdd={() => handleAddPersonField('shareholdersNames', { shareholder: '', shareNumber: '', email: '', phone: '', address: '', pan: '' } as Person)}
+                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('shareholdersNames', oldValue, newValue)}
+                    onRemove={value => handleRemovePersonField('shareholdersNames', value)}
                     placeholder={[]}
                     itemLabelPrefix=""
                   />
@@ -749,10 +796,10 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                 <div className="space-y-2">
                   <ArrayFieldsInput
                     label="Designated Partner"
-                    values={formData.personNames || [{ Partner: '', Percentage: '', email: '', phone: '', address: '', PAN: '' } as Person]}
-                    onAdd={() => handleAddPersonField('personNames', { Partner: '', Percentage: '', email: '', phone: '', address: '', PAN: '' } as Person)}
-                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('personNames', oldValue, newValue)}
-                    onRemove={value => handleRemovePersonField('personNames', value)}
+                    values={formData.designatedPartnerNames || []}
+                    onAdd={() => handleAddPersonField('designatedPartnerNames', { partner: '', percentage: '', email: '', phone: '', address: '', pan: '' } as Person)}
+                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('designatedPartnerNames', oldValue, newValue)}
+                    onRemove={value => handleRemovePersonField('designatedPartnerNames', value)}
                     placeholder={[]}
                     itemLabelPrefix=""
                   />
@@ -760,10 +807,10 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                 <div className="space-y-2">
                   <ArrayFieldsInput
                     label="Propreitors"
-                    values={formData.personNames || [{ Propreitor: '', email: '', phone: '', address: '', PAN: '' } as Person]}
-                    onAdd={() => handleAddPersonField('personNames', { Propreitor: '', email: '', phone: '', address: '', PAN: '' } as Person)}
-                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('personNames', oldValue, newValue)}
-                    onRemove={value => handleRemovePersonField('personNames', value)}
+                    values={formData.propreitorsNames || []}
+                    onAdd={() => handleAddPersonField('propreitorsNames', { propreitor: '', email: '', phone: '', address: '', pan: '' } as Person)}
+                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('propreitorsNames', oldValue, newValue)}
+                    onRemove={value => handleRemovePersonField('propreitorsNames', value)}
                     placeholder={[]}
                     itemLabelPrefix=""
                   />
@@ -771,10 +818,10 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                 <div className="space-y-2">
                   <ArrayFieldsInput
                     label="Members"
-                    values={formData.personNames || [{ Member: '', Designation: '', email: '', phone: '', address: '', PAN: '' } as Person]}
-                    onAdd={() => handleAddPersonField('personNames', { Member: '', Designation: '', email: '', phone: '', address: '', PAN: '' } as Person)}
-                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('personNames', oldValue, newValue)}
-                    onRemove={value => handleRemovePersonField('personNames', value)}
+                    values={formData.membersNames || []}
+                    onAdd={() => handleAddPersonField('membersNames', { member: '', designation: '', email: '', phone: '', address: '', pan: '' } as Person)}
+                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('membersNames', oldValue, newValue)}
+                    onRemove={value => handleRemovePersonField('membersNames', value)}
                     placeholder={[]}
                     itemLabelPrefix=""
                   />
@@ -786,11 +833,29 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Dedicated Manager</Label>
-              <Input value={formData.dedicatedManager || ""} onChange={e => setFormData(prev => ({ ...prev, dedicatedManager: e.target.value }))} placeholder="Dedicated Manager" />
+              <CreatableSelect
+                value={formData.dedicatedManager ?? undefined}
+                options={dedicatedManagerOptions}
+                onChange={(value) => setFormData(prev => ({ ...prev, dedicatedManager: value ?? undefined }))}
+                onCreateOption={(newType) => {
+                  addDedicateManagersOption(newType);
+                  setFormData(prev => ({ ...prev, dedicatedManager: newType }));
+                }}
+                placeholder="Select or create a manager"
+              />
             </div>
             <div className="space-y-2">
               <Label>Dedicated Staff</Label>
-              <Input value={formData.dedicatedStaff || ""} onChange={e => setFormData(prev => ({ ...prev, dedicatedStaff: e.target.value }))} placeholder="Dedicated Staff" />
+              <CreatableSelect
+                value={formData.dedicatedStaff ?? undefined}
+                options={dedicatedStaffsOptions}
+                onChange={(value) => setFormData(prev => ({ ...prev, dedicatedStaff: value ?? undefined }))}
+                onCreateOption={(newType) => {
+                  addDedicateStaffsOption(newType);
+                  setFormData(prev => ({ ...prev, dedicatedStaff: newType }));
+                }}
+                placeholder="Select or create a staff"
+              />
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
@@ -804,7 +869,6 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                 }}
                 placeholder="Select or create a status"
               />
-
             </div>
           </div>
 

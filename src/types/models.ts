@@ -27,30 +27,34 @@ export interface Client {
   address: string,
   state: string,
   country: string,
-  DSC: boolean,
-  DSCExpiryDate: string,
-  IEC: string,
-  PAN: string,
-  TAN: string,
-  DIN: string,
-  CIN: string,
-  PFNum: string,
-  ESINum: string,
+  dsc: boolean,
+  dscexpiryDate: string,
+  iec: string,
+  pan: string,
+  tan: string,
+  din: string,
+  cin: string,
+  pfnum: string,
+  esinum: string,
   professionalTaxNum: string,
   taxAudit: string,
   isINC20ACompliance: boolean,
-  INC20AComplianceDate: string,
+  inc20AComplianceDate: string,
   isLLPIN: boolean,
-  LLPIN: string,
+  llpin: string,
   hasSocietyNum: boolean,
   societyNum: string,
-  GSTNums: string[],
+  gstnums: string[],
   proprietorshipFirmNames: string[],
   companyNames:  string[],
-  HUFNames:  string[],
+  hufnames:  string[],
   shareholderCompanyNames:  string[],
   kartaNames: string[],
-  personNames:  Person[],
+  directorNames:  Person[],
+  shareholdersNames:  Person[],
+  designatedPartnerNames:  Person[],
+  propreitorsNames:  Person[],
+  membersNames:  Person[],
   dedicatedManager: string,
   dedicatedStaff: string,
   status: string;
@@ -58,22 +62,25 @@ export interface Client {
 }
 
 export interface Person {
-  PersonId: string;
-  PersonType: string;
-  Director: string;
-  Partner: string;
-  Shareholder: string;
-  Propreitor: string;
-  Member: string;
-  Designation: string;
-  DIN: string;
-  ShareNumber: string;
-  Percentage: string;
+  personId: string;
+  personType: string;
+  parentClientId: string;
+  director: string;
+  partner: string;
+  shareholder: string;
+  propreitor: string;
+  member: string;
+  designation: string;
+  din: string;
+  shareNumber: string;
+  percentage: string;
   email: string;
   phone: string;
   address: string;
-  PAN: string;
+  pan: string;
 }
+
+
 
 export interface Billing {
   clientId: string;

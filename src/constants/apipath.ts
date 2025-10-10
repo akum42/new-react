@@ -1,5 +1,7 @@
 const API_PATH = 'http://localhost:8080/api';
 const USERS_API_URL = "http://localhost:8080/api/users";
+const USERS_MANAGERS_URL = "http://localhost:8080/api/users/byrole/manager/name";
+const USERS_EMPLOYEES_URL = "http://localhost:8080/api/users/byrole/employee/name";
 const USERS_ROLE_URL = "http://localhost:8080/api/users/roles";
 const USERS_STATUS_URL = "http://localhost:8080/api/users/statuses";
 const CURRENT_USER_API_URL = "http://localhost:8080/api/users/me";
@@ -15,6 +17,8 @@ const DASHBOARD_PATH = '/dashboard';
 export const API_PATHS = {
   API_PATH,
   USERS_API_URL,
+  USERS_MANAGERS_URL,
+  USERS_EMPLOYEES_URL,
   USERS_ROLE_URL,
   USERS_STATUS_URL,
   CURRENT_USER_API_URL,

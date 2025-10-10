@@ -33,7 +33,7 @@ export const ArrayFieldInput: React.FC<ArrayFieldInputProps> = ({
     {values.map((value, index) => (
       <div className="flex items-center" key={index}>
         {itemLabelPrefix && (
-          <span className="text-sm font-medium">{itemLabelPrefix} {index + 1}</span>
+          <span className="text-sm font-medium">{itemLabelPrefix}{index + 1}</span>
         )}
         <Input
           value={value}

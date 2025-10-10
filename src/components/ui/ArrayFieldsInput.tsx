@@ -36,65 +36,80 @@ export const ArrayFieldsInput: React.FC<ArrayFieldsInputProps> = ({
         {itemLabelPrefix && (
           <span className="text-sm font-medium">{itemLabelPrefix} {index + 1}</span>
         )}
-        {value.Director !== undefined && (
+        {(value.director !== undefined && value.director !== null) && (
           <Input
-            value={value.Director}
-            onChange={e => onUpdate(value, { ...value, Director: e.target.value })}
-            placeholder={placeholder?.[0]}
+            value={value.director}
+            onChange={e => onUpdate(value, { ...value, director: e.target.value })}
+            placeholder={'Director'}
           />)}
-        {value.Partner !== undefined && (
+        {(value.partner !== undefined && value.partner !== null) && (
           <Input
-            value={value.Partner}
-            onChange={e => onUpdate(value, { ...value, Partner: e.target.value })}
-            placeholder={placeholder?.[0]}
+            value={value.partner}
+            onChange={e => onUpdate(value, { ...value, partner: e.target.value })}
+            placeholder={'Partner'}
           />)}
-        {value.Shareholder !== undefined && (
+        {(value.shareholder !== undefined && value.shareholder !== null) && (
           <Input
-            value={value.Shareholder}
-            onChange={e => onUpdate(value, { ...value, Shareholder: e.target.value })}
-            placeholder={placeholder?.[0]}
+            value={value.shareholder}
+            onChange={e => onUpdate(value, { ...value, shareholder: e.target.value })}
+            placeholder={'Shareholder'}
           />)}
-        {value.DIN !== undefined && (
+        {(value.propreitor !== undefined && value.propreitor !== null) && (
           <Input
-            value={value.DIN}
-            onChange={e => onUpdate(value, { ...value, DIN: e.target.value })}
-            placeholder={placeholder?.[1]}
+            value={value.propreitor}
+            onChange={e => onUpdate(value, { ...value, propreitor: e.target.value })}
+            placeholder={'Propreitor'}
           />)}
-        {value.ShareNumber !== undefined && (
+        {(value.member !== undefined && value.member !== null) && (
           <Input
-            value={value.ShareNumber}
-            onChange={e => onUpdate(value, { ...value, ShareNumber: e.target.value })}
-            placeholder={placeholder?.[1]}
+            value={value.member}
+            onChange={e => onUpdate(value, { ...value, member: e.target.value })}
+            placeholder={'member'}
           />)}
-        {value.Percentage !== undefined && (
+        {(value.din !== undefined && value.din !== null) && (
           <Input
-            value={value.Percentage}
-            onChange={e => onUpdate(value, { ...value, Percentage: e.target.value })}
-            placeholder={placeholder?.[1]}
+            value={value.din}
+            onChange={e => onUpdate(value, { ...value, din: e.target.value })}
+            placeholder={'DIN'}
           />)}
-        {value.email !== undefined && (
+        {(value.shareNumber !== undefined && value.shareNumber !== null) && (
           <Input
+            type="number"
+            value={value.shareNumber}
+            onChange={e => onUpdate(value, { ...value, shareNumber: e.target.value })}
+            placeholder={'Num of Shares'}
+          />)}
+        {(value.percentage !== undefined && value.percentage !== null) && (
+          <Input
+            value={value.percentage}
+            onChange={e => onUpdate(value, { ...value, percentage: e.target.value })}
+            placeholder={"%"}
+          />)}
+        {(value.email !== undefined && value.email !== null) && (
+          <Input
+            type="email"
             value={value.email}
             onChange={e => onUpdate(value, { ...value, email: e.target.value })}
-            placeholder={placeholder?.[2]}
+            placeholder={'Email'}
           />)}
-        {value.phone !== undefined && (
+        {(value.phone !== undefined && value.phone !== null) && (
           <Input
+            type="tel"
             value={value.phone}
             onChange={e => onUpdate(value, { ...value, phone: e.target.value })}
-            placeholder={placeholder?.[3]}
+            placeholder={'Phone'}
           />)}
-        {value.address !== undefined && (
+        {(value.address !== undefined && value.address !== null) && (
           <Input
             value={value.address}
             onChange={e => onUpdate(value, { ...value, address: e.target.value })}
-            placeholder={placeholder?.[4]}
+            placeholder={'Address'}
           />)}
-        {value.PAN !== undefined && (
+        {(value.pan !== undefined && value.pan !== null) && (
           <Input
-            value={value.PAN}
-            onChange={e => onUpdate(value, { ...value, PAN: e.target.value })}
-            placeholder={placeholder?.[5]}
+            value={value.pan}
+            onChange={e => onUpdate(value, { ...value, pan: e.target.value })}
+            placeholder={'PAN'}
           />)}
         <Button type="button" variant="ghost" size="sm" onClick={() => onRemove(value)} className="h-6 w-6 p-0 mt-1">
           <X className="h-4 w-4" />
