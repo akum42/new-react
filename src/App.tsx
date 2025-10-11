@@ -14,61 +14,63 @@ import { API_PATHS } from '@/constants/apipath';
 
 type Page = "dashboard" | "employees" | "clients" | "billing" | "tasks" | "task-types" | "login";
 
-export default function App() {
+function AppContent() {
   const { user, logout } = useAuth();
   const [currentPage, setCurrentPage] = useState<Page>("login");
-  const [currentUser, setCurrentUser] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    if (user) {
+      setCurrentPage("dashboard");
+    } else {
+      setCurrentPage("login");
+    }
+    setLoading(false);
+  }, [user]);
 
   const renderPage = () => {
-    if (!currentUser) {
+    if (!user) {
       return <LoginPage />;
     }
     switch (currentPage) {
       case "dashboard":
-        return <DashboardPage currentUser={currentUser} />;
+        return <DashboardPage currentUser={user} />;
       case "employees":
-        return <EmployeePage currentUser={currentUser} />;
+        return <EmployeePage currentUser={user} />;
       case "clients":
-        return <ClientPage currentUser={currentUser} />;
+        return <ClientPage currentUser={user} />;
       case "billing":
-        return <BillingPage currentUser={currentUser} />;
+        return <BillingPage currentUser={user} />;
       case "tasks":
-        return <TasksPage currentUser={currentUser} />;
+        return <TasksPage currentUser={user} />;
       case "task-types":
-        return <TaskTypePage currentUser={currentUser} />;
+        return <TaskTypePage currentUser={user} />;
       default:
-        return <DashboardPage currentUser={currentUser} />;
+        return <DashboardPage currentUser={user} />;
     }
   };
-
-  useEffect(() => {
-    if (user) {
-      setCurrentUser(user);
-      setCurrentPage("dashboard"); // Redirect to dashboard after login
-    } else {
-      setCurrentUser(null);
-      setCurrentPage("login"); // Go to login page if no user
-    }
-    setLoading(false);
-  }, [user]);
 
   if (loading) {
     return <div>Loading...</div>; // Or a more sophisticated loading screen
   }
   return (
-    <AuthProvider>
-      <div className="flex h-screen bg-background">
-        <Sidebar
-          currentPage={currentPage as Exclude<Page, "login">} // Cast currentPage to exclude "login"
-          setCurrentPage={setCurrentPage} // Pass setCurrentPage directly
-    currentUser={currentUser as any} // currentUser is guaranteed to be not null here
-        />
-        <main className="flex-1 overflow-auto">
-          {renderPage()}
-        </main>
-      </div>
-    </AuthProvider>
+    <div className="flex h-screen bg-background">
+      {user && <Sidebar
+        currentPage={currentPage as Exclude<Page, "login">} // Cast currentPage to exclude "login"
+        setCurrentPage={setCurrentPage} // Pass setCurrentPage directly
+        currentUser={user} // currentUser is guaranteed to be not null here
+        logout={logout}
+      />}          <main className="flex-1 overflow-auto">
+        {renderPage()}
+      </main>
+    </div>
   );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  )
 }

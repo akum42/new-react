@@ -3,55 +3,44 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
 import { ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
-
-// Mock users for authentication
-const mockUsers = [
-  {
-    id: '1',
-    name: 'John Smith',
-    email: 'admin@company.com',
-    role: 'admin',
-    permissions: ['manage_users', 'manage_tasks', 'manage_clients', 'view_billing', 'manage_billing', 'view_reports']
-  },
-  {
-    id: '2',
-    name: 'Sarah Johnson',
-    email: 'manager@company.com',
-    role: 'manager',
-    permissions: ['manage_tasks', 'manage_clients', 'view_billing', 'view_reports']
-  },
-  {
-    id: '3',
-    name: 'Mike Chen',
-    email: 'employee@company.com',
-    role: 'employee',
-    permissions: ['view_reports']
-  }
-];
+import { Employee } from '@/types/models';
 
 // Create Auth Context
 const AuthContext = createContext<{
-  user: any;
-  login: (email: string, password: string) => boolean;
+  user: Employee | null;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
 } | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<{} | null>({});
+  const [user, setUser] = useState<Employee | null>(null);
 
 
-  const login = (email: string, password: string) => {
-    // Simple mock authentication
-    const foundUser = mockUsers.find(u => u.email === email);
-    if (foundUser && password === 'password') {
-      setUser(foundUser);
-      return true;
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await fetch('http://localhost:8080/api/logins/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: email, password }),
+      });
+
+      if (response.ok) {
+        const { user, token } = await response.json();
+        setUser(JSON.parse(user));
+        localStorage.setItem('jwt_token', token);
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
@@ -59,7 +48,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const hasPermission = (permission: string) => {
-    return user?.permissions?.includes(permission) || false;
+    // NOTE: This is a mock permission check. Replace with your actual permission logic.
+    return user?.role === 'admin';
   };
 
   return (
@@ -83,19 +73,22 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Mock validation - check if email exists
-    const userExists = mockUsers.some(u => u.email === email);
-    if (!userExists) {
-      setError('No account found with this email address');
-      return;
-    }
+    try {
+      const response = await fetch(`http://localhost:8080/api/login/${email}`);
 
-    // Simulate sending reset email
-    setIsSubmitted(true);
+      if (response.ok) {
+        setIsSubmitted(true);
+      } else {
+        setError('No account found with this email address');
+      }
+    } catch (error) {
+      console.error('Forgot password request failed:', error);
+      setError('An unexpected error occurred. Please try again.');
+    }
   };
 
   if (isSubmitted) {
@@ -187,15 +180,6 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Login
           </Button>
-
-          <div className="text-xs text-muted-foreground text-center">
-            <p>For demo purposes, use one of these emails:</p>
-            <div className="mt-2 space-y-1">
-              <div>• admin@company.com</div>
-              <div>• manager@company.com</div>
-              <div>• employee@company.com</div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -325,25 +309,18 @@ function ResetPasswordForm({ onBack }: { onBack: () => void }) {
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedDemo, setSelectedDemo] = useState('admin@company.com');
   const [error, setError] = useState('');
   const [view, setView] = useState<'login' | 'forgot' | 'reset'>('login');
   const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const success = login(email, password);
+    const success = await login(email, password);
     if (!success) {
       setError('Invalid email or password');
     }
-  };
-
-  const handleDemoLogin = () => {
-    setEmail(selectedDemo);
-    setPassword('password');
-    login(selectedDemo, 'password');
   };
 
   const handleBackToLogin = () => {
@@ -410,50 +387,6 @@ export default function LoginPage() {
               Sign In
             </Button>
           </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or try demo accounts
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Select value={selectedDemo} onValueChange={setSelectedDemo}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin@company.com">Admin Account</SelectItem>
-                <SelectItem value="manager@company.com">Manager Account</SelectItem>
-                <SelectItem value="employee@company.com">Employee Account</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" onClick={handleDemoLogin} className="w-full">
-              Login as Demo User
-            </Button>
-          </div>
-
-          <div className="text-xs text-muted-foreground space-y-1">
-            <div>Demo credentials:</div>
-            <div>• Admin: admin@company.com / password</div>
-            <div>• Manager: manager@company.com / password</div>
-            <div>• Employee: employee@company.com / password</div>
-          </div>
-
-          <div className="pt-4 text-center">
-            <button
-              type="button"
-              onClick={() => setView('reset')}
-              className="text-sm text-muted-foreground hover:text-foreground underline"
-            >
-              Simulate password reset flow
-            </button>
-          </div>
         </CardContent>
       </Card>
     </div>

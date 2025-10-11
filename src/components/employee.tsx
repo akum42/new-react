@@ -18,6 +18,14 @@ interface EmployeeProps {
   currentUser: Employee;
 }
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('jwt_token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
+};
+
 export default function EmployeePage({ currentUser }: EmployeeProps) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
@@ -36,7 +44,7 @@ export default function EmployeePage({ currentUser }: EmployeeProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(url, { credentials: 'include' });
+      const res = await fetch(url, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error(errorMsg);
       const data = await res.json();
       setter(data);
@@ -68,9 +76,9 @@ export default function EmployeePage({ currentUser }: EmployeeProps) {
 
   const filteredEmployees = employees.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         employee.email.toLowerCase().includes(searchTerm.toLowerCase());
+      employee.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === "all" || employee.role === roleFilter;
-    
+
     return matchesSearch && matchesRole;
   });
 
@@ -95,14 +103,13 @@ export default function EmployeePage({ currentUser }: EmployeeProps) {
     setFormData({ ...employee });
     setIsDialogOpen(true);
   };
-
-  const handleDeleteEmployee = async (employeeId: string) => {
+  const handleDeleteEmployee = async (employeeId: number) => {
     const employee = employees.find(e => e.userId === employeeId);
     if (!employee || !canManageEmployee(employee)) return;
     try {
       const res = await fetch(`${API_PATHS.USERS_API_URL}/${employeeId}`, {
         method: 'DELETE',
-        credentials: 'include',
+        headers: getAuthHeaders(),
       });
       if (!res.ok) throw new Error('Failed to delete employee');
       await fetchEmployees();
@@ -118,8 +125,7 @@ export default function EmployeePage({ currentUser }: EmployeeProps) {
         // Update
         const res = await fetch(`${API_PATHS.USERS_API_URL}/${editingEmployee.userId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers: getAuthHeaders(),
           body: JSON.stringify(formData),
         });
         if (!res.ok) throw new Error('Failed to update employee');
@@ -127,8 +133,7 @@ export default function EmployeePage({ currentUser }: EmployeeProps) {
         // Create
         const res = await fetch(API_PATHS.USERS_API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers: getAuthHeaders(),
           body: JSON.stringify(formData),
         });
         if (!res.ok) throw new Error('Failed to create employee');
@@ -151,8 +156,8 @@ export default function EmployeePage({ currentUser }: EmployeeProps) {
   };
 
   const getStatusColor = (status: string) => {
-    return status === "active" 
-      ? "bg-green-100 text-green-800" 
+    return status === "active"
+      ? "bg-green-100 text-green-800"
       : "bg-red-100 text-red-800";
   };
 
@@ -203,7 +208,7 @@ export default function EmployeePage({ currentUser }: EmployeeProps) {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Role</Label>
               <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -211,10 +216,10 @@ export default function EmployeePage({ currentUser }: EmployeeProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>                  
-                   {roles.map(role => (
-                      <SelectItem value={role}>{role}</SelectItem>
-                    ))}
+                  <SelectItem value="all">All Roles</SelectItem>
+                  {roles.map(role => (
+                    <SelectItem value={role}>{role}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -318,20 +323,20 @@ export default function EmployeePage({ currentUser }: EmployeeProps) {
               {editingEmployee ? "Update employee information" : "Fill in the details for the new employee"}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
               <Input id="name" value={formData.name || ""} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))} placeholder="Employee name" />
-            </div>            
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={formData.email || ""} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="employee@company.com" />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select 
+              <Select
                 value={formData.role || "employee"} onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as any }))} >
                 <SelectTrigger>
                   <SelectValue />
@@ -342,10 +347,10 @@ export default function EmployeePage({ currentUser }: EmployeeProps) {
                   ))}
                 </SelectContent>
               </Select>
-            </div>     
+            </div>
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select  value={formData.status || "active"} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}  >
+              <Select value={formData.status || "active"} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}  >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -367,7 +372,7 @@ export default function EmployeePage({ currentUser }: EmployeeProps) {
             <div className="space-y-2">
               <Label htmlFor="altPhoneNum">Alt Phone</Label>
               <Input id="altPhoneNum" type="altPhoneNum" value={formData.altPhoneNum || ""} onChange={(e) => setFormData(prev => ({ ...prev, altPhoneNum: e.target.value }))} placeholder="1234567890" />
-            </div>              
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>

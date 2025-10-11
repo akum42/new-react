@@ -11,23 +11,18 @@ import {
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Badge } from "./ui/badge";
-
-type User = {
-  id: string;
-  name: string;
-  role: "admin" | "manager" | "employee";
-  email: string;
-};
+import { Employee } from "@/types/models";
 
 type Page = "dashboard" | "employees" | "clients" | "billing" | "tasks" | "task-types";
 
 interface SidebarProps {
   currentPage: Page;
   setCurrentPage: (page: Page) => void;
-  currentUser: User;
+  currentUser: Employee;
+  logout: () => void;
 }
 
-export function Sidebar({ currentPage, setCurrentPage, currentUser }: SidebarProps) {
+export function Sidebar({ currentPage, setCurrentPage, currentUser, logout }: SidebarProps) {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "employees", label: "Employees", icon: Users },
@@ -59,7 +54,7 @@ export function Sidebar({ currentPage, setCurrentPage, currentUser }: SidebarPro
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarFallback>
-              {currentUser.name.split(" ").map(n => n[0]).join("")}
+              {currentUser.name ? currentUser.name.split(" ").map(n => n[0]).join("") : ''}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
@@ -90,7 +85,7 @@ export function Sidebar({ currentPage, setCurrentPage, currentUser }: SidebarPro
 
       {/* Footer */}
       <div className="p-4 border-t border-border">
-        <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground">
+        <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground" onClick={logout}>
           <LogOut className="h-4 w-4" />
           Sign Out
         </Button>

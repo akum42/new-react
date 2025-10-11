@@ -1,13 +1,13 @@
 export type Role = 'admin' | 'manager' | 'employee';
 
 export interface Employee {
-  userId: string;
+  userId: number;
   name: string;
   email: string;
   role: string;
-  address: string;
-  phoneNum: string;
-  altPhoneNum: string;
+  address?: string;
+  phoneNum?: string;
+  altPhoneNum?: string;
   status: string;
 }
 
@@ -80,7 +80,10 @@ export interface Person {
   pan: string;
 }
 
-
+export interface LoginUser {
+  userId: string;
+  password: string;
+}
 
 export interface Billing {
   clientId: string;

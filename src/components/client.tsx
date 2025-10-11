@@ -19,6 +19,69 @@ interface EmployeeProps {
   currentUser: Employee;
 }
 
+const fieldConfig: Record<string, Record<string, boolean>> = {
+  "Individual": {
+    proprietorshipFirmNames: true,
+    companyNames: true,
+    hufnames: true,
+    shareholderCompanyNames: true,
+  },
+  "HUF": {
+    shareholderCompanyNames: true,
+    kartaNames: true,
+  },
+  "Pvt Ltd Company": {
+    shareholderCompanyNames: true,
+    directorNames: true,
+    shareholdersNames: true,
+  },
+  "Public Ltd": {
+    shareholderCompanyNames: true,
+    directorNames: true,
+    shareholdersNames: true,
+  },
+  "OPC Company": {
+    shareholderCompanyNames: true,
+    directorNames: true,
+    shareholdersNames: true,
+  },
+  "LLP": {
+    shareholderCompanyNames: true,
+    designatedPartnerNames: true,
+  },
+  "Partnership Firm": {
+    shareholderCompanyNames: true,
+    designatedPartnerNames: true,
+  },
+  "Proprietorship Firm": {
+    propreitorsNames: true,
+  },
+  "AOP/BOI": {
+    membersNames: true,
+  },
+  "Sec. 8 Company": {
+    shareholderCompanyNames: true,
+    directorNames: true,
+    shareholdersNames: true,
+  },
+  "Trust/Society": {
+    membersNames: true,
+  },
+  "Foreign Company": {
+    shareholderCompanyNames: true,
+    directorNames: true,
+    shareholdersNames: true,
+  },
+};
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('jwt_token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
+};
+
 export default function ClientPage({ currentUser }: EmployeeProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [clientTypes, setClientTypes] = useState<string[]>([]);
@@ -190,7 +253,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(url, { credentials: 'include' });
+      const res = await fetch(url, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error(errorMsg);
       const data = await res.json();
       setter(data);
@@ -251,7 +314,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
     try {
       const res = await fetch(`${API_PATHS.CLIENT_API_URL}/${clientId}`, {
         method: 'DELETE',
-        credentials: 'include',
+        headers: getAuthHeaders(),
       });
       if (!res.ok) throw new Error('Failed to delete client');
       await fetchClients();
@@ -268,8 +331,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
         // Update
         const res = await fetch(`${API_PATHS.CLIENT_API_URL}/${editingClient.clientId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers: getAuthHeaders(),
           body: JSON.stringify(formData),
         });
         if (!res.ok) throw new Error('Failed to update client');
@@ -277,8 +339,7 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
         // Create
         const res = await fetch(API_PATHS.CLIENT_API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers: getAuthHeaders(),
           body: JSON.stringify(formData),
         });
         if (!res.ok) throw new Error('Failed to create client');
@@ -695,72 +756,71 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <ArrayFieldInput
-                label="GST Numbers"
-                values={formData.gstnums || []}
-                onAdd={() => handleAddArrayField('gstnums')}
-                onUpdate={(oldValue, newValue) => handleUpdateArrayField('gstnums', oldValue, newValue)}
-                onRemove={value => handleRemoveArrayField('gstnums', value)}
-                placeholder="GST Number"
-                itemLabelPrefix="GST"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <ArrayFieldInput
-                label="Proprietorship Firm"
-                values={formData.proprietorshipFirmNames || []}
-                onAdd={() => handleAddArrayField('proprietorshipFirmNames')}
-                onUpdate={(oldValue, newValue) => handleUpdateArrayField('proprietorshipFirmNames', oldValue, newValue)}
-                onRemove={value => handleRemoveArrayField('proprietorshipFirmNames', value)}
-                placeholder="Firm Number"
-                itemLabelPrefix="Firm"
-              />
-            </div>
-            <div className="space-y-2">
-              <ArrayFieldInput
-                label="Director's Company Names"
-                values={formData.companyNames || []}
-                onAdd={() => handleAddArrayField('companyNames')}
-                onUpdate={(oldValue, newValue) => handleUpdateArrayField('companyNames', oldValue, newValue)}
-                onRemove={value => handleRemoveArrayField('companyNames', value)}
-                placeholder="Company name"
-                itemLabelPrefix="Company"
-              />
-            </div>
-            <div className="space-y-2">
-              <ArrayFieldInput
-                label="Karta's HUF Names"
-                values={formData.hufnames || []}
-                onAdd={() => handleAddArrayField('hufnames')}
-                onUpdate={(oldValue, newValue) => handleUpdateArrayField('hufnames', oldValue, newValue)}
-                onRemove={value => handleRemoveArrayField('hufnames', value)}
-                placeholder="HUF name"
-                itemLabelPrefix="HUF"
-              />
-            </div>
-            <div className="space-y-2">
-              <ArrayFieldInput
-                label="Shareholder Company Names"
-                values={formData.shareholderCompanyNames || []}
-                onAdd={() => handleAddArrayField('shareholderCompanyNames')}
-                onUpdate={(oldValue, newValue) => handleUpdateArrayField('shareholderCompanyNames', oldValue, newValue)}
-                onRemove={value => handleRemoveArrayField('shareholderCompanyNames', value)}
-                placeholder="Company name"
-                itemLabelPrefix="Company"
-              />
-            </div>
-            <div className="space-y-2">
-              <ArrayFieldInput
-                label="Karta Names"
-                values={formData.kartaNames || []}
-                onAdd={() => handleAddArrayField('kartaNames')}
-                onUpdate={(oldValue, newValue) => handleUpdateArrayField('kartaNames', oldValue, newValue)}
-                onRemove={value => handleRemoveArrayField('kartaNames', value)}
-                placeholder="Karta name"
-                itemLabelPrefix="Karta"
-              />
-            </div>
+            {formData.clientType && fieldConfig[formData.clientType]?.proprietorshipFirmNames && (
+              <div className="flex items-center gap-2">
+                <ArrayFieldInput
+                  label="Proprietorship Firm"
+                  values={formData.proprietorshipFirmNames || []}
+                  onAdd={() => handleAddArrayField('proprietorshipFirmNames')}
+                  onUpdate={(oldValue, newValue) => handleUpdateArrayField('proprietorshipFirmNames', oldValue, newValue)}
+                  onRemove={value => handleRemoveArrayField('proprietorshipFirmNames', value)}
+                  placeholder="Firm Number"
+                  itemLabelPrefix="Firm"
+                />
+              </div>
+            )}
+            {formData.clientType && fieldConfig[formData.clientType]?.companyNames && (
+              <div className="space-y-2">
+                <ArrayFieldInput
+                  label="Director's Company Names"
+                  values={formData.companyNames || []}
+                  onAdd={() => handleAddArrayField('companyNames')}
+                  onUpdate={(oldValue, newValue) => handleUpdateArrayField('companyNames', oldValue, newValue)}
+                  onRemove={value => handleRemoveArrayField('companyNames', value)}
+                  placeholder="Company name"
+                  itemLabelPrefix="Company"
+                />
+              </div>
+            )}
+            {formData.clientType && fieldConfig[formData.clientType]?.hufnames && (
+              <div className="space-y-2">
+                <ArrayFieldInput
+                  label="Karta's HUF Names"
+                  values={formData.hufnames || []}
+                  onAdd={() => handleAddArrayField('hufnames')}
+                  onUpdate={(oldValue, newValue) => handleUpdateArrayField('hufnames', oldValue, newValue)}
+                  onRemove={value => handleRemoveArrayField('hufnames', value)}
+                  placeholder="HUF name"
+                  itemLabelPrefix="HUF"
+                />
+              </div>
+            )}
+            {formData.clientType && fieldConfig[formData.clientType]?.shareholderCompanyNames && (
+              <div className="space-y-2">
+                <ArrayFieldInput
+                  label="Shareholder Company Names"
+                  values={formData.shareholderCompanyNames || []}
+                  onAdd={() => handleAddArrayField('shareholderCompanyNames')}
+                  onUpdate={(oldValue, newValue) => handleUpdateArrayField('shareholderCompanyNames', oldValue, newValue)}
+                  onRemove={value => handleRemoveArrayField('shareholderCompanyNames', value)}
+                  placeholder="Company name"
+                  itemLabelPrefix="Company"
+                />
+              </div>
+            )}
+            {formData.clientType && fieldConfig[formData.clientType]?.kartaNames && (
+              <div className="space-y-2">
+                <ArrayFieldInput
+                  label="Karta Names"
+                  values={formData.kartaNames || []}
+                  onAdd={() => handleAddArrayField('kartaNames')}
+                  onUpdate={(oldValue, newValue) => handleUpdateArrayField('kartaNames', oldValue, newValue)}
+                  onRemove={value => handleRemoveArrayField('kartaNames', value)}
+                  placeholder="Karta name"
+                  itemLabelPrefix="Karta"
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -771,61 +831,71 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
             </div>
             {!isAddClientTableCollapsed && (
               <div className="space-y-2 md:col-span-3  gap-4">
-                <div className="space-y-2">
-                  <ArrayFieldsInput
-                    label="Directors"
-                    values={formData.directorNames || []}
-                    onAdd={() => handleAddPersonField('directorNames', { director: '', din: '', email: '', phone: '', address: '', pan: '' } as Person)}
-                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('directorNames', oldValue, newValue)}
-                    onRemove={value => handleRemovePersonField('directorNames', value)}
-                    placeholder={[]}
-                    itemLabelPrefix=""
-                  />
-                </div>
-                <div className="space-y-2">
-                  <ArrayFieldsInput
-                    label="Shareholders"
-                    values={formData.shareholdersNames || []}
-                    onAdd={() => handleAddPersonField('shareholdersNames', { shareholder: '', shareNumber: '', email: '', phone: '', address: '', pan: '' } as Person)}
-                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('shareholdersNames', oldValue, newValue)}
-                    onRemove={value => handleRemovePersonField('shareholdersNames', value)}
-                    placeholder={[]}
-                    itemLabelPrefix=""
-                  />
-                </div>
-                <div className="space-y-2">
-                  <ArrayFieldsInput
-                    label="Designated Partner"
-                    values={formData.designatedPartnerNames || []}
-                    onAdd={() => handleAddPersonField('designatedPartnerNames', { partner: '', percentage: '', email: '', phone: '', address: '', pan: '' } as Person)}
-                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('designatedPartnerNames', oldValue, newValue)}
-                    onRemove={value => handleRemovePersonField('designatedPartnerNames', value)}
-                    placeholder={[]}
-                    itemLabelPrefix=""
-                  />
-                </div>
-                <div className="space-y-2">
-                  <ArrayFieldsInput
-                    label="Propreitors"
-                    values={formData.propreitorsNames || []}
-                    onAdd={() => handleAddPersonField('propreitorsNames', { propreitor: '', email: '', phone: '', address: '', pan: '' } as Person)}
-                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('propreitorsNames', oldValue, newValue)}
-                    onRemove={value => handleRemovePersonField('propreitorsNames', value)}
-                    placeholder={[]}
-                    itemLabelPrefix=""
-                  />
-                </div>
-                <div className="space-y-2">
-                  <ArrayFieldsInput
-                    label="Members"
-                    values={formData.membersNames || []}
-                    onAdd={() => handleAddPersonField('membersNames', { member: '', designation: '', email: '', phone: '', address: '', pan: '' } as Person)}
-                    onUpdate={(oldValue, newValue) => handleUpdatePersonField('membersNames', oldValue, newValue)}
-                    onRemove={value => handleRemovePersonField('membersNames', value)}
-                    placeholder={[]}
-                    itemLabelPrefix=""
-                  />
-                </div>
+                {formData.clientType && fieldConfig[formData.clientType]?.directorNames && (
+                  <div className="space-y-2">
+                    <ArrayFieldsInput
+                      label="Directors"
+                      values={formData.directorNames || []}
+                      onAdd={() => handleAddPersonField('directorNames', { director: '', din: '', email: '', phone: '', address: '', pan: '' } as Person)}
+                      onUpdate={(oldValue, newValue) => handleUpdatePersonField('directorNames', oldValue, newValue)}
+                      onRemove={value => handleRemovePersonField('directorNames', value)}
+                      placeholder={[]}
+                      itemLabelPrefix=""
+                    />
+                  </div>
+                )}
+                {formData.clientType && fieldConfig[formData.clientType]?.shareholdersNames && (
+                  <div className="space-y-2">
+                    <ArrayFieldsInput
+                      label="Shareholders"
+                      values={formData.shareholdersNames || []}
+                      onAdd={() => handleAddPersonField('shareholdersNames', { shareholder: '', shareNumber: '', email: '', phone: '', address: '', pan: '' } as Person)}
+                      onUpdate={(oldValue, newValue) => handleUpdatePersonField('shareholdersNames', oldValue, newValue)}
+                      onRemove={value => handleRemovePersonField('shareholdersNames', value)}
+                      placeholder={[]}
+                      itemLabelPrefix=""
+                    />
+                  </div>
+                )}
+                {formData.clientType && fieldConfig[formData.clientType]?.designatedPartnerNames && (
+                  <div className="space-y-2">
+                    <ArrayFieldsInput
+                      label="Designated Partner"
+                      values={formData.designatedPartnerNames || []}
+                      onAdd={() => handleAddPersonField('designatedPartnerNames', { partner: '', percentage: '', email: '', phone: '', address: '', pan: '' } as Person)}
+                      onUpdate={(oldValue, newValue) => handleUpdatePersonField('designatedPartnerNames', oldValue, newValue)}
+                      onRemove={value => handleRemovePersonField('designatedPartnerNames', value)}
+                      placeholder={[]}
+                      itemLabelPrefix=""
+                    />
+                  </div>
+                )}
+                {formData.clientType && fieldConfig[formData.clientType]?.propreitorsNames && (
+                  <div className="space-y-2">
+                    <ArrayFieldsInput
+                      label="Propreitors"
+                      values={formData.propreitorsNames || []}
+                      onAdd={() => handleAddPersonField('propreitorsNames', { propreitor: '', email: '', phone: '', address: '', pan: '' } as Person)}
+                      onUpdate={(oldValue, newValue) => handleUpdatePersonField('propreitorsNames', oldValue, newValue)}
+                      onRemove={value => handleRemovePersonField('propreitorsNames', value)}
+                      placeholder={[]}
+                      itemLabelPrefix=""
+                    />
+                  </div>
+                )}
+                {formData.clientType && fieldConfig[formData.clientType]?.membersNames && (
+                  <div className="space-y-2">
+                    <ArrayFieldsInput
+                      label="Members"
+                      values={formData.membersNames || []}
+                      onAdd={() => handleAddPersonField('membersNames', { member: '', designation: '', email: '', phone: '', address: '', pan: '' } as Person)}
+                      onUpdate={(oldValue, newValue) => handleUpdatePersonField('membersNames', oldValue, newValue)}
+                      onRemove={value => handleRemovePersonField('membersNames', value)}
+                      placeholder={[]}
+                      itemLabelPrefix=""
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -870,11 +940,10 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
                 placeholder="Select or create a status"
               />
             </div>
-          </div>
-
-          <div className="space-y-2 md:grid-cols-3 gap-42">
-            <Label>Notes</Label>
-            <Textarea value={formData.notes || ""} onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))} placeholder="Notes" rows={3} />
+            <div className="space-y-2 md:col-span-3">
+              <Label>Notes</Label>
+              <Textarea value={formData.notes || ""} onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))} placeholder="Notes" rows={3} />
+            </div>
           </div>
 
           <DialogFooter>
@@ -890,4 +959,4 @@ export default function ClientPage({ currentUser }: EmployeeProps) {
       </Dialog >
     </div >
   );
-} 
+}
